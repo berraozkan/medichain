@@ -62,6 +62,17 @@ export default function Marketplace() {
       0,
     );
     try {
+      const provider = contract.runner.provider;
+      const balance = await provider.getBalance(account);
+      if (balance < price) {
+        removeToast(tid);
+        addToast(
+          `Yetersiz bakiye. Bu kayıt için ${ethers.formatEther(price)} ETH gerekiyor. Sepolia test ETH almak için sepoliafaucet.com adresini ziyaret edin.`,
+          "error",
+          8000,
+        );
+        return;
+      }
       const tx = await contract.purchaseData(id, { value: price });
       await tx.wait();
       removeToast(tid);
@@ -72,7 +83,13 @@ export default function Marketplace() {
       loadRecords();
     } catch (e) {
       removeToast(tid);
-      addToast("İşlem başarısız: " + e.message, "error");
+      if (e.code === "ACTION_REJECTED") {
+        addToast("İşlem MetaMask'ta iptal edildi.", "error");
+      } else if (e.message?.includes("Zaten erisim var")) {
+        addToast("Bu kaydı zaten satın aldınız.", "error");
+      } else {
+        addToast("İşlem başarısız: " + e.message, "error");
+      }
     } finally {
       setPurchasing(null);
     }
