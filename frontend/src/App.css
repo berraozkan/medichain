@@ -1777,8 +1777,8 @@ textarea.form-input {
     grid-template-columns: 1fr;
   }
   .market-grid {
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
   }
   .stats-row {
     max-width: 100%;
@@ -1787,6 +1787,126 @@ textarea.form-input {
   .page-hero {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+/* ── MOBİL (≤ 480px) ── */
+@media (max-width: 480px) {
+  /* Grids — tek sütun */
+  .market-grid,
+  .records-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Kartlar — iç dolgu azalt */
+  .market-card,
+  .record-card {
+    padding: 16px;
+  }
+
+  /* Stat kartları */
+  .stats-row {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .stat-card {
+    padding: 12px 8px;
+  }
+  .stat-value {
+    font-size: 1.3rem;
+  }
+  .stat-label {
+    font-size: .68rem;
+  }
+
+  /* Başlık */
+  .page-title {
+    font-size: 1.3rem;
+  }
+  .page-subtitle {
+    font-size: .85rem;
+  }
+
+  /* Toolbar — sırala dropdown tam genişlik */
+  .market-toolbar-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .toolbar-right {
+    width: 100%;
+  }
+  .toolbar-right .form-input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Kategori chip'leri — yatay kaydırma */
+  .category-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .category-filters::-webkit-scrollbar {
+    display: none;
+  }
+  .cat-chip {
+    flex-shrink: 0;
+  }
+
+  /* Input + buton satırları — alt alta */
+  .input-row {
+    flex-direction: column;
+  }
+  .input-row > button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Erişim paneli */
+  .access-panel {
+    padding-top: 12px;
+    gap: 10px;
+  }
+  .revoke-manual {
+    padding: 10px;
+  }
+
+  /* Upload adım göstergesi — yatay kaydırma */
+  .step-indicator {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+  .step-indicator::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* CTA */
+  .cta-section {
+    padding: 36px 16px;
+  }
+
+  /* Hero butonları */
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hero-actions .btn {
+    justify-content: center;
+  }
+
+  /* Tabs — yatay kaydırma */
+  .tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar {
+    display: none;
   }
 }
 

@@ -320,7 +320,7 @@ export default function MyData() {
                       <div className="access-panel-title" style={{ marginBottom: 10 }}>
                         Manuel Erişim İptali
                       </div>
-                      <div style={{ display: "flex", gap: 8 }}>
+                      <div className="input-row" style={{ display: "flex", gap: 8 }}>
                         <input
                           className="form-input"
                           placeholder="Araştırmacı cüzdan adresi (0x...)"
@@ -346,7 +346,7 @@ export default function MyData() {
                       <div className="access-panel-title" style={{ marginBottom: 10 }}>
                         Fiyat Güncelle
                       </div>
-                      <div style={{ display: "flex", gap: 8 }}>
+                      <div className="input-row" style={{ display: "flex", gap: 8 }}>
                         <div style={{ position: "relative", flex: 1 }}>
                           <input
                             className="form-input"
@@ -381,7 +381,7 @@ export default function MyData() {
                       <p style={{ fontSize: ".72rem", color: "var(--gray-500)", marginBottom: 10, lineHeight: 1.5 }}>
                         Bu işlem geri alınamaz. Kayıt kalıcı olarak yeni cüzdan adresine devredilir.
                       </p>
-                      <div style={{ display: "flex", gap: 8 }}>
+                      <div className="input-row" style={{ display: "flex", gap: 8 }}>
                         <input
                           className="form-input"
                           placeholder="Yeni sahip cüzdan adresi (0x...)"
