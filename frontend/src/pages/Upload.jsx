@@ -5,21 +5,43 @@ import { useWallet } from "../context/WalletContext";
 import { encryptFile } from "../utils/crypto";
 import { WalletIcon } from "../components/Icons";
 
-const PINATA_JWT = import.meta.env.VITE_PINATA_JWT;
 const STEPS      = ["Dosya Seçimi", "Fiyat Belirleme", "Blockchain Kaydı"];
 const CATEGORIES = ["Kan Tahlili", "MRI / Görüntüleme", "EKG", "Röntgen", "Patoloji", "Ameliyat Raporu", "Diğer"];
 
-async function uploadBytesToIPFS(bytes, filename, contentType, jwt) {
-  const formData = new FormData();
-  formData.append("file", new Blob([bytes], { type: contentType }), filename);
-  const res  = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${jwt}` },
-    body: formData,
+function bytesToBase64(bytes) {
+  const CHUNK = 8192;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+
+async function uploadBytesToIPFS(bytes, filename, contentType) {
+  // Local dev: VITE_PINATA_JWT varsa doğrudan çağır (JWT bundle'a gömülmez çünkü prod'da bu değişken set edilmez)
+  const devJwt = import.meta.env.VITE_PINATA_JWT;
+  if (import.meta.env.DEV && devJwt) {
+    const formData = new FormData();
+    formData.append("file", new Blob([bytes], { type: contentType }), filename);
+    const res  = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+      method:  "POST",
+      headers: { Authorization: `Bearer ${devJwt}` },
+      body:    formData,
+    });
+    const data = await res.json();
+    if (!data.IpfsHash) throw new Error("IPFS yüklemesi başarısız oldu.");
+    return data.IpfsHash;
+  }
+
+  // Production: JWT sunucu tarafında, istemciye hiç gönderilmez
+  const res = await fetch("/api/upload-ipfs", {
+    method:  "POST",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify({ data: bytesToBase64(new Uint8Array(bytes)), filename, contentType }),
   });
-  const data = await res.json();
-  if (!data.IpfsHash) throw new Error("IPFS yüklemesi başarısız oldu. Pinata JWT anahtarını kontrol edin.");
-  return data.IpfsHash;
+  const result = await res.json();
+  if (!result.IpfsHash) throw new Error(result.error || "IPFS yüklemesi başarısız oldu.");
+  return result.IpfsHash;
 }
 
 export default function Upload() {
@@ -48,10 +70,6 @@ export default function Upload() {
     if (!price || isNaN(price) || Number(price) <= 0) {
       addToast("Geçerli bir fiyat giriniz (örn: 0.01).", "error"); return;
     }
-    if (!PINATA_JWT) {
-      addToast("IPFS yapılandırması eksik. Lütfen .env dosyasına VITE_PINATA_JWT ekleyin.", "error"); return;
-    }
-
     setLoading(true);
     setProgress(10);
     setActiveStep(1);
@@ -69,8 +87,7 @@ export default function Upload() {
       const encryptedFileHash = await uploadBytesToIPFS(
         encryptedBytes,
         `enc_${file.name}`,
-        "application/octet-stream",
-        PINATA_JWT
+        "application/octet-stream"
       );
       setProgress(50);
 
@@ -95,8 +112,8 @@ export default function Upload() {
       };
       const enc = new TextEncoder();
       const [previewHash, dataHash] = await Promise.all([
-        uploadBytesToIPFS(enc.encode(JSON.stringify(previewData)), "preview.json", "application/json", PINATA_JWT),
-        uploadBytesToIPFS(enc.encode(JSON.stringify(fullData)),    "data.json",    "application/json", PINATA_JWT),
+        uploadBytesToIPFS(enc.encode(JSON.stringify(previewData)), "preview.json", "application/json"),
+        uploadBytesToIPFS(enc.encode(JSON.stringify(fullData)),    "data.json",    "application/json"),
       ]);
       setProgress(70);
 
