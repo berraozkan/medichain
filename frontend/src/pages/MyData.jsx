@@ -18,6 +18,8 @@ export default function MyData() {
   const [purchasers, setPurchasers]         = useState({});
   const [loadingBuyers, setLoadingBuyers]   = useState({});
   const [revokeInputs, setRevokeInputs]     = useState({});
+  const [priceInputs, setPriceInputs]       = useState({});
+  const [transferInputs, setTransferInputs] = useState({});
 
   const myRecords    = records.filter((r) => account && r.owner.toLowerCase() === account.toLowerCase());
   const totalActive  = myRecords.filter((r) => r.isActive).length;
@@ -32,9 +34,8 @@ export default function MyData() {
       const uniqueBuyers = [...new Set(events.map((e) => e.args.buyer))];
       const withAccess = await Promise.all(
         uniqueBuyers.map(async (addr) => ({
-          address:    addr,
-          hasAccess:  await contract.hasAccess(addr, recordId),
-          everBought: true,
+          address:   addr,
+          hasAccess: await contract.hasAccess(addr, recordId),
         }))
       );
       setPurchasers((prev) => ({ ...prev, [recordId]: withAccess }));
@@ -94,6 +95,46 @@ export default function MyData() {
     }
   }
 
+  async function updatePrice(recordId) {
+    if (!contract) return;
+    const raw = priceInputs[recordId];
+    if (!raw || isNaN(raw) || Number(raw) <= 0) {
+      addToast("Geçerli bir fiyat girin (örn: 0.01).", "error"); return;
+    }
+    const tid = addToast("Fiyat güncelleniyor...", "loading", 0);
+    try {
+      const tx = await contract.updatePrice(recordId, ethers.parseEther(raw));
+      await tx.wait();
+      removeToast(tid);
+      addToast(`Kayıt #${recordId} fiyatı güncellendi.`, "success");
+      setPriceInputs((prev) => ({ ...prev, [recordId]: "" }));
+      loadRecords();
+    } catch (e) {
+      removeToast(tid);
+      addToast("Hata: " + e.message, "error");
+    }
+  }
+
+  async function transferOwnership(recordId) {
+    if (!contract) return;
+    const newOwner = transferInputs[recordId]?.trim();
+    if (!ethers.isAddress(newOwner)) {
+      addToast("Geçersiz cüzdan adresi.", "error"); return;
+    }
+    const tid = addToast("Sahiplik devrediliyor...", "loading", 0);
+    try {
+      const tx = await contract.transferRecordOwnership(recordId, newOwner);
+      await tx.wait();
+      removeToast(tid);
+      addToast(`Kayıt #${recordId} yeni sahibine devredildi.`, "success");
+      setTransferInputs((prev) => ({ ...prev, [recordId]: "" }));
+      loadRecords();
+    } catch (e) {
+      removeToast(tid);
+      addToast("Hata: " + e.message, "error");
+    }
+  }
+
   function toggleAccess(id) {
     setExpandedAccess((prev) => {
       const next = !prev[id];
@@ -138,7 +179,6 @@ export default function MyData() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="stats-row">
         <div className="stat-card">
           <div className="stat-value">{myRecords.length}</div>
@@ -221,12 +261,14 @@ export default function MyData() {
                     className={`btn btn-sm ${accessOpen ? "btn-dark" : "btn-outline"}`}
                     onClick={() => toggleAccess(r.id)}
                   >
-                    Erişim Yönetimi {accessOpen ? "▲" : "▼"}
+                    Yönet {accessOpen ? "▲" : "▼"}
                   </button>
                 </div>
 
                 {accessOpen && (
                   <div className="access-panel">
+
+                    {/* ── Erişim Kayıtları ── */}
                     <div className="access-panel-header">
                       <span className="access-panel-title">Erişim Kayıtları</span>
                       <button
@@ -273,6 +315,7 @@ export default function MyData() {
                       </div>
                     )}
 
+                    {/* ── Manuel Erişim İptali ── */}
                     <div className="revoke-manual">
                       <div className="access-panel-title" style={{ marginBottom: 10 }}>
                         Manuel Erişim İptali
@@ -297,6 +340,65 @@ export default function MyData() {
                         Listede görünmeyen bir araştırmacının erişimini iptal etmek için adresini doğrudan girin.
                       </p>
                     </div>
+
+                    {/* ── Fiyat Güncelle ── */}
+                    <div className="revoke-manual">
+                      <div className="access-panel-title" style={{ marginBottom: 10 }}>
+                        Fiyat Güncelle
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <div style={{ position: "relative", flex: 1 }}>
+                          <input
+                            className="form-input"
+                            type="number"
+                            step="0.001"
+                            min="0.001"
+                            placeholder={`Mevcut: ${ethers.formatEther(r.price)} ETH`}
+                            value={priceInputs[r.id] || ""}
+                            onChange={(e) => setPriceInputs((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                            style={{ paddingRight: 44 }}
+                          />
+                          <span style={{
+                            position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                            fontSize: ".72rem", fontWeight: 700, color: "var(--gray-400)",
+                          }}>ETH</span>
+                        </div>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => updatePrice(r.id)}
+                          disabled={!priceInputs[r.id]}
+                        >
+                          Güncelle
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* ── Sahiplik Devri ── */}
+                    <div className="revoke-manual" style={{ borderTop: "1px solid var(--error, #ef4444)", paddingTop: 14 }}>
+                      <div className="access-panel-title" style={{ marginBottom: 4, color: "var(--error, #ef4444)" }}>
+                        Sahiplik Devri
+                      </div>
+                      <p style={{ fontSize: ".72rem", color: "var(--gray-500)", marginBottom: 10, lineHeight: 1.5 }}>
+                        Bu işlem geri alınamaz. Kayıt kalıcı olarak yeni cüzdan adresine devredilir.
+                      </p>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          className="form-input"
+                          placeholder="Yeni sahip cüzdan adresi (0x...)"
+                          value={transferInputs[r.id] || ""}
+                          onChange={(e) => setTransferInputs((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => transferOwnership(r.id)}
+                          disabled={!transferInputs[r.id]}
+                        >
+                          Devret
+                        </button>
+                      </div>
+                    </div>
+
                   </div>
                 )}
               </div>
