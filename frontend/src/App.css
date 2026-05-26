@@ -1832,3 +1832,6 @@ textarea.form-input {
 [data-theme="dark"] .divider {
   border-top-color: #334155;
 }
+[data-theme="dark"] .not-found-code {
+  color: #475569;
+}
