@@ -215,15 +215,11 @@ export default function Purchases() {
                       <span className="record-row-label">Ödenen Fiyat</span>
                       <span className="record-price">{ethers.formatEther(r.price)} ETH</span>
                     </div>
-                    <div className="record-row">
-                      <span className="record-row-label">Erişim</span>
-                      <span className="access-badge has-access">Aktif</span>
-                    </div>
                   </div>
 
                   <div className="record-actions">
                     <button
-                      className="btn btn-primary btn-sm"
+                      className="btn btn-success btn-sm"
                       onClick={() => handleDownload(r)}
                       disabled={isDownloading}
                       style={{ flex: 1, justifyContent: "center" }}
