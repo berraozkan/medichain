@@ -9,11 +9,11 @@
 }
 
 :root {
-  /* ── PRIMARY (indigo) ── */
-  --primary: #4f46e5;
-  --primary-dark: #3730a3;
-  --primary-light: #eef2ff;
-  --primary-mid: #c7d2fe;
+  /* ── PRIMARY (sky blue) ── */
+  --primary: #0284c7;
+  --primary-dark: #0369a1;
+  --primary-light: #e0f2fe;
+  --primary-mid: #bae6fd;
 
   /* ── BRAND ── */
   --navy: #1a3e5c;
@@ -47,8 +47,8 @@
   /* ── KATEGORI BADGE'LERİ ── */
   --cat-blood-bg: #fee2e2;
   --cat-blood-text: #991b1b;
-  --cat-imaging-bg: #eef2ff;
-  --cat-imaging-text: #3730a3;
+  --cat-imaging-bg: #e0f2fe;
+  --cat-imaging-text: #0369a1;
   --cat-ekg-bg: #fff7ed;
   --cat-ekg-text: #9a3412;
   --cat-xray-bg: #ede9fe;
@@ -100,7 +100,7 @@ body {
   flex: 1;
   background: radial-gradient(
       ellipse 60% 35% at 88% 12%,
-      rgba(79, 70, 229, 0.28),
+      rgba(2, 132, 199, 0.28),
       transparent
     ),
     radial-gradient(
@@ -175,7 +175,7 @@ body {
   color: white;
 }
 .logo-dot {
-  color: #a5b4fc; /* indigo-300 — eskisi #60a5fa (mavi-300) */
+  color: #7dd3fc; /* indigo-300 — eskisi #60a5fa (mavi-300) */
 }
 
 .logo-sub {
@@ -366,7 +366,7 @@ body {
   color: white;
 }
 .btn-primary:hover {
-  background: #4338ca; /* indigo-700 */
+  background: #0369a1; /* indigo-700 */
 }
 .btn-outline {
   background: transparent;
@@ -388,7 +388,7 @@ body {
   color: white;
 }
 .btn-info:hover {
-  background: #4338ca;
+  background: #0369a1;
 }
 .btn-danger {
   background: var(--danger);
@@ -449,7 +449,7 @@ body {
   inset: 0;
   background: radial-gradient(
       ellipse 55% 65% at 85% 45%,
-      rgba(79, 70, 229, 0.35) 0%,
+      rgba(2, 132, 199, 0.35) 0%,
       transparent 65%
     ),
     radial-gradient(
@@ -479,7 +479,7 @@ body {
   gap: 8px;
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #a5b4fc; /* indigo-300 — eskisi #93c5fd (mavi-300) */
+  color: #7dd3fc; /* indigo-300 — eskisi #93c5fd (mavi-300) */
   padding: 5px 14px;
   border-radius: 4px;
   font-size: 0.75rem;
@@ -498,7 +498,7 @@ body {
 }
 .hero h1 em {
   font-style: normal;
-  background: linear-gradient(135deg, #a5b4fc 0%, #34d399 100%);
+  background: linear-gradient(135deg, #7dd3fc 0%, #34d399 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -753,7 +753,7 @@ body {
 .form-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12); /* indigo glow */
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12); /* indigo glow */
 }
 
 /* File drop */
