@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { WalletProvider, useWallet } from "./context/WalletContext";
+import { WalletProvider } from "./context/WalletContext";
 import { CONTRACT_ADDRESS } from "./context/WalletContext";
 import Header    from "./components/Header";
 import Toast     from "./components/Toast";
