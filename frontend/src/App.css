@@ -1770,7 +1770,7 @@ textarea.form-input {
 }
 
 [data-theme="dark"] .form-input {
-  background: #1e293b;
+  background-color: #1e293b;
   border-color: #334155;
   color: #f1f5f9;
 }
