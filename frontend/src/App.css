@@ -1203,6 +1203,7 @@ body {
 .step-indicator {
   display: flex;
   align-items: center;
+  justify-content: center;
   margin-bottom: 32px;
   overflow-x: auto;
   padding-bottom: 4px;
