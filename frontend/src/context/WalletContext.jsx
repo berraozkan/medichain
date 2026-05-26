@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useRef } from "react";
 import { ethers } from "ethers";
 
-export const CONTRACT_ADDRESS = "0x888BC5087F9218E4e016CCbcC690fDcF62b2e287";
+export const CONTRACT_ADDRESS = "0x5D54F7c9383c7076b7661858Acf6d0DE95C21552";
 const SEPOLIA_CHAIN_ID = 11155111n;
 
 export const ABI = [
@@ -10,12 +10,15 @@ export const ABI = [
   "function getDataHash(uint256 _id) external view returns (string memory)",
   "function revokeAccess(uint256 _id, address _researcher) external",
   "function delistData(uint256 _id) external",
+  "function updatePrice(uint256 _id, uint256 _newPrice) external",
   "function dataCount() external view returns (uint256)",
   "function medicalRecords(uint256) external view returns (string ipfsHash, uint256 price, address owner, bool isActive)",
   "function hasAccess(address, uint256) external view returns (bool)",
+  "function totalEarnings(address) external view returns (uint256)",
   "event DataListed(uint256 indexed id, address indexed owner, uint256 price)",
   "event DataPurchased(uint256 indexed id, address indexed buyer)",
-  "event DataRevoked(uint256 indexed id)",
+  "event DataRevoked(uint256 indexed id, address indexed researcher)",
+  "event PriceUpdated(uint256 indexed id, uint256 newPrice)",
 ];
 
 const WalletContext = createContext(null);
