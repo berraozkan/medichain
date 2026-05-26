@@ -154,7 +154,7 @@ export default function MyData() {
           </Link>
         </div>
       ) : (
-        <div className="record-list">
+        <div className="records-grid">
           {myRecords.map((r) => {
             const accessOpen    = expandedAccess[r.id];
             const buyers        = purchasers[r.id] || [];
@@ -162,41 +162,50 @@ export default function MyData() {
             const activeBuyers  = buyers.filter((b) => b.hasAccess).length;
 
             return (
-              <div className="record-list-item" key={r.id}>
-                {/* Satır */}
-                <div className="record-list-row">
-                  <div className="record-list-identity">
+              <div className="record-card" key={r.id}>
+                <div className="record-header">
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span className="record-id">Kayıt {String(r.id).padStart(3, "0")}</span>
                     <span className="owner-badge">Sahibi</span>
                   </div>
-                  <div className="record-list-hash">{shortHash(r.ipfsHash)}</div>
-                  <div className="record-list-price">{ethers.formatEther(r.price)} ETH</div>
-                  {purchasers[r.id] && (
-                    <div className="record-list-access" style={{ color: activeBuyers > 0 ? "var(--success)" : "var(--gray-400)" }}>
-                      {activeBuyers} erişim
-                    </div>
-                  )}
-                  <div className="record-list-status">
-                    <span className={`record-status ${r.isActive ? "active" : "inactive"}`}>
-                      {r.isActive ? "Aktif" : "Pasif"}
-                    </span>
-                  </div>
-                  <div className="record-list-actions">
-                    {r.isActive && (
-                      <button className="btn btn-ghost btn-sm" onClick={() => delistRecord(r.id)}>
-                        Kaldır
-                      </button>
-                    )}
-                    <button
-                      className={`btn btn-sm ${accessOpen ? "btn-dark" : "btn-outline"}`}
-                      onClick={() => toggleAccess(r.id)}
-                    >
-                      Yönet {accessOpen ? "▲" : "▼"}
-                    </button>
-                  </div>
+                  <span className={`record-status ${r.isActive ? "active" : "inactive"}`}>
+                    {r.isActive ? "Aktif" : "Pasif"}
+                  </span>
                 </div>
 
-                {/* Erişim Paneli */}
+                <div className="record-info">
+                  <div className="record-row">
+                    <span className="record-row-label">IPFS Hash</span>
+                    <span className="record-row-value">{shortHash(r.ipfsHash)}</span>
+                  </div>
+                  <div className="record-row">
+                    <span className="record-row-label">Satış Fiyatı</span>
+                    <span className="record-price">{ethers.formatEther(r.price)} ETH</span>
+                  </div>
+                  {purchasers[r.id] && (
+                    <div className="record-row">
+                      <span className="record-row-label">Aktif Erişim</span>
+                      <span style={{ fontWeight: 600, color: activeBuyers > 0 ? "var(--success)" : "var(--gray-400)", fontSize: ".82rem" }}>
+                        {activeBuyers} araştırmacı
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="record-actions">
+                  {r.isActive && (
+                    <button className="btn btn-ghost btn-sm" onClick={() => delistRecord(r.id)}>
+                      Satıştan Kaldır
+                    </button>
+                  )}
+                  <button
+                    className={`btn btn-sm ${accessOpen ? "btn-dark" : "btn-outline"}`}
+                    onClick={() => toggleAccess(r.id)}
+                  >
+                    Erişim Yönetimi {accessOpen ? "▲" : "▼"}
+                  </button>
+                </div>
+
                 {accessOpen && (
                   <div className="access-panel">
                     <div className="access-panel-header">
