@@ -956,8 +956,8 @@ body {
   justify-content: space-between;
 }
 .record-id {
-  background: var(--gray-100);
-  color: var(--gray-600);
+  background: linear-gradient(90deg, #0284c7, #0ea5e9);
+  color: #ffffff;
   font-size: 0.72rem;
   font-weight: 700;
   padding: 3px 10px;
@@ -1873,8 +1873,8 @@ textarea.form-input {
 }
 
 [data-theme="dark"] .record-id {
-  background: #334155;
-  color: #94a3b8;
+  background: linear-gradient(90deg, #0284c7, #0ea5e9);
+  color: #ffffff;
 }
 
 [data-theme="dark"] .market-card .record-header span[style] {
