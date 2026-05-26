@@ -1732,12 +1732,12 @@ textarea.form-input {
   --bg-page: #0f172a;
   --navy: #0a1628;
   --gray-50:  #1e293b;
-  --gray-100: #1e293b;
+  --gray-100: #243148;
   --gray-200: #334155;
-  --gray-300: #475569;
-  --gray-400: #94a3b8;
-  --gray-500: #64748b;
-  --gray-600: #94a3b8;
+  --gray-300: #4e637a;
+  --gray-400: #7a93ad;
+  --gray-500: #94a3b8;
+  --gray-600: #adbdd0;
   --gray-700: #cbd5e1;
   --gray-800: #e2e8f0;
   --gray-900: #f1f5f9;
@@ -1841,4 +1841,43 @@ textarea.form-input {
 }
 [data-theme="dark"] .not-found-code {
   color: #475569;
+}
+
+[data-theme="dark"] .market-price,
+[data-theme="dark"] .record-price {
+  color: #38bdf8;
+}
+
+[data-theme="dark"] .record-row-label {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .record-row-value {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .card-title {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .card-subtitle {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .stat-value {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .stat-label {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .record-id {
+  background: #334155;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .market-card .record-header span[style] {
+  background: #1a3d2a !important;
+  color: #4ade80 !important;
 }
