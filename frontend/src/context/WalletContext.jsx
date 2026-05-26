@@ -1,24 +1,27 @@
 import { createContext, useContext, useState, useRef } from "react";
 import { ethers } from "ethers";
 
-export const CONTRACT_ADDRESS = "0x5D54F7c9383c7076b7661858Acf6d0DE95C21552";
+export const CONTRACT_ADDRESS = "0x64e070f33ce3Cba42A887f21701eA26e389B4c6c";
 const SEPOLIA_CHAIN_ID = 11155111n;
 
 export const ABI = [
-  "function listData(string memory _ipfsHash, uint256 _price) external",
+  "function listData(string calldata _previewHash, string calldata _dataHash, uint256 _price) external",
   "function purchaseData(uint256 _id) external payable",
   "function getDataHash(uint256 _id) external view returns (string memory)",
   "function revokeAccess(uint256 _id, address _researcher) external",
   "function delistData(uint256 _id) external",
+  "function relistData(uint256 _id) external",
   "function updatePrice(uint256 _id, uint256 _newPrice) external",
+  "function transferRecordOwnership(uint256 _id, address _newOwner) external",
   "function dataCount() external view returns (uint256)",
-  "function medicalRecords(uint256) external view returns (string ipfsHash, uint256 price, address owner, bool isActive)",
+  "function medicalRecords(uint256) external view returns (string previewHash, uint256 price, address owner, bool isActive)",
   "function hasAccess(address, uint256) external view returns (bool)",
   "function totalEarnings(address) external view returns (uint256)",
   "event DataListed(uint256 indexed id, address indexed owner, uint256 price)",
   "event DataPurchased(uint256 indexed id, address indexed buyer)",
   "event DataRevoked(uint256 indexed id, address indexed researcher)",
   "event PriceUpdated(uint256 indexed id, uint256 newPrice)",
+  "event OwnershipTransferred(uint256 indexed id, address indexed oldOwner, address indexed newOwner)",
 ];
 
 const WalletContext = createContext(null);
@@ -105,7 +108,7 @@ export function WalletProvider({ children }) {
       const results = await Promise.all(ids.map((i) => target.medicalRecords(i)));
       const items = results.map((r, idx) => ({
         id: ids[idx],
-        ipfsHash: r.ipfsHash,
+        previewHash: r.previewHash,
         price: r.price,
         owner: r.owner,
         isActive: r.isActive,

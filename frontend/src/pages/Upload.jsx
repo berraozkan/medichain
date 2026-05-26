@@ -60,7 +60,7 @@ export default function Upload() {
     try {
       // 1. Dosyayı şifrele
       const { encryptedBytes, key, iv } = await encryptFile(file);
-      setProgress(30);
+      setProgress(25);
 
       removeToast(activeToastId);
       activeToastId = addToast("Şifreli dosya IPFS'e yükleniyor...", "loading", 0);
@@ -72,10 +72,19 @@ export default function Upload() {
         "application/octet-stream",
         PINATA_JWT
       );
-      setProgress(55);
+      setProgress(50);
 
-      // 3. Metadata JSON'unu oluştur ve IPFS'e yükle
-      const metadata = {
+      removeToast(activeToastId);
+      activeToastId = addToast("Metadata IPFS'e yükleniyor...", "loading", 0);
+
+      // 3a. Herkese açık önizleme JSON (şifreleme anahtarı içermez)
+      const previewData = {
+        version: 2,
+        category,
+        description: description.trim(),
+      };
+      // 3b. Özel veri JSON (şifreleme anahtarını içerir — sadece yetkililere)
+      const fullData = {
         version: 2,
         fileName: file.name,
         category,
@@ -84,26 +93,24 @@ export default function Upload() {
         key,
         iv,
       };
-      const metadataBytes = new TextEncoder().encode(JSON.stringify(metadata));
-      const metadataHash  = await uploadBytesToIPFS(
-        metadataBytes,
-        "metadata.json",
-        "application/json",
-        PINATA_JWT
-      );
+      const enc = new TextEncoder();
+      const [previewHash, dataHash] = await Promise.all([
+        uploadBytesToIPFS(enc.encode(JSON.stringify(previewData)), "preview.json", "application/json", PINATA_JWT),
+        uploadBytesToIPFS(enc.encode(JSON.stringify(fullData)),    "data.json",    "application/json", PINATA_JWT),
+      ]);
       setProgress(70);
 
       setActiveStep(2);
       removeToast(activeToastId);
       activeToastId = addToast("İşlem blockchain'e gönderiliyor...", "loading", 0);
 
-      // 4. Sadece metadata hash'ini akıllı sözleşmeye kaydet
-      const tx = await contract.listData(metadataHash, ethers.parseEther(price));
+      // 4. İki hash'i ve fiyatı akıllı sözleşmeye kaydet
+      const tx = await contract.listData(previewHash, dataHash, ethers.parseEther(price));
       setProgress(85);
       await tx.wait();
       setProgress(100);
       setActiveStep(3);
-      setLastHash(metadataHash);
+      setLastHash(previewHash);
 
       removeToast(activeToastId);
       activeToastId = null;

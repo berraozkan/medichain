@@ -208,8 +208,8 @@ export default function Purchases() {
 
                   <div className="record-info">
                     <div className="record-row">
-                      <span className="record-row-label">Metadata Hash</span>
-                      <span className="record-row-value">{shortHash(r.ipfsHash)}</span>
+                      <span className="record-row-label">Önizleme Hash</span>
+                      <span className="record-row-value">{shortHash(r.previewHash)}</span>
                     </div>
                     <div className="record-row">
                       <span className="record-row-label">Ödenen Fiyat</span>

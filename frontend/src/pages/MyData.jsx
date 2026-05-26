@@ -79,6 +79,21 @@ export default function MyData() {
     }
   }
 
+  async function relistRecord(id) {
+    if (!contract) return;
+    const tid = addToast("Kayıt tekrar listeleniyor...", "loading", 0);
+    try {
+      const tx = await contract.relistData(id);
+      await tx.wait();
+      removeToast(tid);
+      addToast(`Kayıt #${id} tekrar listelendi.`, "success");
+      loadRecords();
+    } catch (e) {
+      removeToast(tid);
+      addToast("Hata: " + e.message, "error");
+    }
+  }
+
   function toggleAccess(id) {
     setExpandedAccess((prev) => {
       const next = !prev[id];
@@ -175,8 +190,8 @@ export default function MyData() {
 
                 <div className="record-info">
                   <div className="record-row">
-                    <span className="record-row-label">IPFS Hash</span>
-                    <span className="record-row-value">{shortHash(r.ipfsHash)}</span>
+                    <span className="record-row-label">Önizleme Hash</span>
+                    <span className="record-row-value">{shortHash(r.previewHash)}</span>
                   </div>
                   <div className="record-row">
                     <span className="record-row-label">Satış Fiyatı</span>
@@ -193,9 +208,13 @@ export default function MyData() {
                 </div>
 
                 <div className="record-actions">
-                  {r.isActive && (
+                  {r.isActive ? (
                     <button className="btn btn-ghost btn-sm" onClick={() => delistRecord(r.id)}>
                       Satıştan Kaldır
+                    </button>
+                  ) : (
+                    <button className="btn btn-outline btn-sm" onClick={() => relistRecord(r.id)}>
+                      Tekrar Listele
                     </button>
                   )}
                   <button

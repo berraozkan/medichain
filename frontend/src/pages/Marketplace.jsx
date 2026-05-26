@@ -52,7 +52,7 @@ export default function Marketplace() {
 
   async function fetchAllMetadata(recs) {
     const toFetch = recs.filter(
-      (r) => r.ipfsHash && !metadata[r.id] && !fetchingRef.current.has(r.id)
+      (r) => r.previewHash && !metadata[r.id] && !fetchingRef.current.has(r.id)
     );
     if (toFetch.length === 0) return;
 
@@ -61,7 +61,7 @@ export default function Marketplace() {
     await Promise.allSettled(
       toFetch.map(async (r) => {
         try {
-          const res = await fetch(`https://gateway.pinata.cloud/ipfs/${r.ipfsHash}`);
+          const res = await fetch(`https://gateway.pinata.cloud/ipfs/${r.previewHash}`);
           const text = await res.text();
           const meta = JSON.parse(text);
           if (meta.version === 2) {
@@ -153,16 +153,8 @@ export default function Marketplace() {
     }
     setViewing(id);
     try {
-      const record = records.find((r) => r.id === id);
-      const isOwner = account?.toLowerCase() === record?.owner?.toLowerCase();
-
-      let metadataHash;
-      if (isOwner) {
-        metadataHash = record.ipfsHash;
-      } else {
-        metadataHash = await contract.getDataHash(id);
-      }
-
+      // getDataHash now allows both owners and buyers — no special case needed
+      const metadataHash = await contract.getDataHash(id);
       const res = await fetch(
         `https://gateway.pinata.cloud/ipfs/${metadataHash}`,
       );
@@ -394,9 +386,9 @@ export default function Marketplace() {
 
                 <div className="record-info">
                   <div className="record-row">
-                    <span className="record-row-label">Metadata Hash</span>
+                    <span className="record-row-label">Önizleme Hash</span>
                     <span className="record-row-value">
-                      {shortHash(r.ipfsHash)}
+                      {shortHash(r.previewHash)}
                     </span>
                   </div>
                   <div className="record-row">
