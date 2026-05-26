@@ -575,7 +575,7 @@ body {
   max-width: 1400px;
   margin: 40px auto 0;
   padding-top: 28px;
-  border-top: none;
+  border-top: 1px solid rgba(26, 62, 92, 0.15);
   display: flex;
   gap: 48px;
   flex-wrap: wrap;
@@ -1858,6 +1858,9 @@ textarea.form-input {
   border-color: #475569;
 }
 
+[data-theme="dark"] .hero-stats {
+  border-top-color: rgba(255,255,255,0.1);
+}
 [data-theme="dark"] .hero-stat-value {
   color: #ffffff;
 }
