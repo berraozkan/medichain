@@ -87,6 +87,8 @@ export function WalletProvider({ children }) {
       addToast("Cüzdan başarıyla bağlandı!", "success");
       await loadRecords(c, address);
 
+      window.ethereum.removeAllListeners("chainChanged");
+      window.ethereum.removeAllListeners("accountsChanged");
       window.ethereum.on("chainChanged", () => window.location.reload());
       window.ethereum.on("accountsChanged", () => window.location.reload());
     } catch (e) {
