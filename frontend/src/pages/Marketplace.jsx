@@ -321,7 +321,7 @@ export default function Marketplace() {
                 <div className="record-actions">
                   {r.isActive && !isOwner && (
                     <button
-                      className="btn btn-primary btn-sm"
+                      className="btn btn-success btn-sm"
                       onClick={() => purchaseRecord(r.id, r.price)}
                       disabled={isBuying}
                       style={{ flex: 1, justifyContent: "center" }}
