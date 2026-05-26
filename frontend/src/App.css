@@ -1159,15 +1159,11 @@ body {
 
 /* ── STATS ROW ── */
 .stats-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin-bottom: 32px;
-}
-.stats-row .stat-card {
-  min-width: 140px;
-  max-width: 200px;
-  flex: 0 0 auto;
+  max-width: 520px;
 }
 .stat-card {
   background: rgba(255, 255, 255, 0.82);
@@ -1747,10 +1743,9 @@ textarea.form-input {
     grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
     gap: 24px;
   }
-  .stats-row .stat-card {
-    min-width: 120px;
-    max-width: none;
-    flex: 1 1 120px;
+  .stats-row {
+    max-width: 100%;
+    grid-template-columns: repeat(3, 1fr);
   }
   .page-hero {
     flex-direction: column;
