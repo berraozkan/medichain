@@ -258,7 +258,7 @@ export default function Marketplace() {
               <div className="market-card" key={r.id}>
                 <div className="record-header">
                   <div
-                    style={{ display: "flex", alignItems: "center", gap: 6 }}
+                    style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}
                   >
                     <span className="record-id">
                       Kayıt {String(r.id).padStart(3, "0")}
