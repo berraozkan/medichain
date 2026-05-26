@@ -650,6 +650,7 @@ body {
   width: min(92%, 1400px);
   margin: 0 auto;
   padding: 40px 0 120px;
+  flex: 1;
 }
 .grid-2 {
   display: grid;
