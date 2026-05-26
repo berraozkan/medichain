@@ -1684,6 +1684,43 @@ textarea.form-input {
   color: var(--cat-other-text);
 }
 
+/* ── KATEGORİ FİLTRE CHİPLERİ ── */
+.category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 4px;
+}
+.cat-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  transition: all .15s;
+}
+.cat-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.cat-chip.active {
+  border-color: currentColor;
+  box-shadow: 0 0 0 1px currentColor;
+  font-weight: 700;
+}
+.cat-chip.cat-blood  { background: var(--cat-blood-bg);   color: var(--cat-blood-text); }
+.cat-chip.cat-imaging{ background: var(--cat-imaging-bg); color: var(--cat-imaging-text); }
+.cat-chip.cat-ekg    { background: var(--cat-ekg-bg);     color: var(--cat-ekg-text); }
+.cat-chip.cat-xray   { background: var(--cat-xray-bg);    color: var(--cat-xray-text); }
+.cat-chip.cat-patho  { background: var(--cat-patho-bg);   color: var(--cat-patho-text); }
+.cat-chip.cat-surgery{ background: var(--cat-surgery-bg); color: var(--cat-surgery-text); }
+.cat-chip.cat-other  { background: var(--cat-other-bg);   color: var(--cat-other-text); }
+
 /* ── NETWORK BANNER ── */
 .network-banner {
   background: #fef2f2;
@@ -1897,6 +1934,16 @@ textarea.form-input {
 }
 [data-theme="dark"] .tab {
   border-right-color: #334155;
+}
+
+[data-theme="dark"] .cat-chip {
+  background: #1e293b;
+  color: #94a3b8;
+  border-color: #334155;
+}
+[data-theme="dark"] .cat-chip:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
 }
 
 [data-theme="dark"] .toast {

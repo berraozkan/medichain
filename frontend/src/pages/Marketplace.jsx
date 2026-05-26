@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
@@ -8,6 +8,18 @@ import { WalletIcon, InboxIcon, ClockIcon } from "../components/Icons";
 const shortAddr = (addr) =>
   addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : "";
 const shortHash = (h) => (h ? `${h.slice(0, 16)}...` : "");
+
+const CATEGORY_STYLES = {
+  "Kan Tahlili":       "cat-blood",
+  "MRI / Görüntüleme": "cat-imaging",
+  "EKG":               "cat-ekg",
+  "Röntgen":           "cat-xray",
+  "Patoloji":          "cat-patho",
+  "Ameliyat Raporu":   "cat-surgery",
+  "Diğer":             "cat-other",
+};
+
+const ALL_CATEGORIES = Object.keys(CATEGORY_STYLES);
 
 export default function Marketplace() {
   const {
@@ -22,18 +34,57 @@ export default function Marketplace() {
   } = useWallet();
   const [filter, setFilter] = useState("active");
   const [sort, setSort] = useState("default");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [purchasing, setPurchasing] = useState(null);
   const [viewing, setViewing] = useState(null);
+  const [metadata, setMetadata] = useState({});
+  const fetchingRef = useRef(new Set());
 
   useEffect(() => {
     document.title = "MediChain — Pazar Yeri";
   }, []);
 
+  useEffect(() => {
+    if (records.length > 0) {
+      fetchAllMetadata(records);
+    }
+  }, [records]);
+
+  async function fetchAllMetadata(recs) {
+    const toFetch = recs.filter(
+      (r) => r.ipfsHash && !metadata[r.id] && !fetchingRef.current.has(r.id)
+    );
+    if (toFetch.length === 0) return;
+
+    toFetch.forEach((r) => fetchingRef.current.add(r.id));
+
+    await Promise.allSettled(
+      toFetch.map(async (r) => {
+        try {
+          const res = await fetch(`https://gateway.pinata.cloud/ipfs/${r.ipfsHash}`);
+          const text = await res.text();
+          const meta = JSON.parse(text);
+          if (meta.version === 2) {
+            setMetadata((prev) => ({ ...prev, [r.id]: meta }));
+          }
+        } catch (_) {
+          // silently skip — metadata is display-only
+        } finally {
+          fetchingRef.current.delete(r.id);
+        }
+      })
+    );
+  }
+
+  const availableCategories = ALL_CATEGORIES.filter((cat) =>
+    records.some((r) => metadata[r.id]?.category === cat)
+  );
+
   const filtered = records
     .filter((r) => {
-      if (filter === "active") return r.isActive;
-      if (filter === "mine")
-        return account && r.owner.toLowerCase() === account.toLowerCase();
+      if (filter === "active") { if (!r.isActive) return false; }
+      else if (filter === "mine") { if (!account || r.owner.toLowerCase() !== account.toLowerCase()) return false; }
+      if (categoryFilter !== "all" && metadata[r.id]?.category !== categoryFilter) return false;
       return true;
     })
     .sort((a, b) => {
@@ -198,6 +249,26 @@ export default function Marketplace() {
             </select>
           </div>
         </div>
+
+        {availableCategories.length > 0 && (
+          <div className="category-filters">
+            <button
+              className={`cat-chip ${categoryFilter === "all" ? "active" : ""}`}
+              onClick={() => setCategoryFilter("all")}
+            >
+              Tümü
+            </button>
+            {availableCategories.map((cat) => (
+              <button
+                key={cat}
+                className={`cat-chip ${CATEGORY_STYLES[cat]} ${categoryFilter === cat ? "active" : ""}`}
+                onClick={() => setCategoryFilter(cat === categoryFilter ? "all" : cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {!account ? (
@@ -235,6 +306,8 @@ export default function Marketplace() {
           <p>
             {filter === "mine"
               ? "Henüz sisteme kayıt eklemediniz."
+              : categoryFilter !== "all"
+              ? `"${categoryFilter}" kategorisinde listelenmiş kayıt bulunmuyor.`
               : "Şu an bu filtre için listelenmiş kayıt bulunmuyor."}
           </p>
           {filter === "mine" && (
@@ -246,6 +319,15 @@ export default function Marketplace() {
               İlk Kaydı Ekle
             </Link>
           )}
+          {categoryFilter !== "all" && (
+            <button
+              className="btn btn-ghost"
+              style={{ marginTop: 16 }}
+              onClick={() => setCategoryFilter("all")}
+            >
+              Filtreyi Temizle
+            </button>
+          )}
         </div>
       ) : (
         <div className="market-grid">
@@ -253,6 +335,8 @@ export default function Marketplace() {
             const isOwner = account?.toLowerCase() === r.owner.toLowerCase();
             const isBuying = purchasing === r.id;
             const isViewing = viewing === r.id;
+            const meta = metadata[r.id];
+            const catClass = meta?.category ? CATEGORY_STYLES[meta.category] || "cat-other" : null;
 
             return (
               <div className="market-card" key={r.id}>
@@ -264,6 +348,11 @@ export default function Marketplace() {
                       Kayıt {String(r.id).padStart(3, "0")}
                     </span>
                     {isOwner && <span className="owner-badge">Sahibi</span>}
+                    {meta?.category && (
+                      <span className={`access-badge ${catClass}`} style={{ textTransform: "none", letterSpacing: 0 }}>
+                        {meta.category}
+                      </span>
+                    )}
                     <span
                       style={{
                         background: "#f0fdf4",
@@ -316,6 +405,16 @@ export default function Marketplace() {
                       {shortAddr(r.owner)}
                     </span>
                   </div>
+                  {meta?.description && (
+                    <div className="record-row">
+                      <span className="record-row-label">Açıklama</span>
+                      <span className="record-row-value" style={{ fontStyle: "italic" }}>
+                        {meta.description.length > 60
+                          ? meta.description.slice(0, 60) + "…"
+                          : meta.description}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="record-actions">
