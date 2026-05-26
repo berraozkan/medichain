@@ -2,7 +2,6 @@ import { createContext, useContext, useState, useRef } from "react";
 import { ethers } from "ethers";
 
 export const CONTRACT_ADDRESS = "0x96016fDe170Eb2e6E6b54f34C767319Fc8e8D946";
-const SEPOLIA_CHAIN_ID = 11155111n;
 
 export const ABI = [
   "function listData(string calldata _previewHash, string calldata _dataHash, uint256 _price) external",

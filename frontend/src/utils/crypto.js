@@ -16,9 +16,11 @@ export async function encryptFile(file) {
   };
 }
 
+import { ipfsUrl } from "./ipfs.js";
+
 export async function decryptAndDownload(metadata) {
   const { encryptedFileHash, key, iv, fileName } = metadata;
-  const res = await fetch(`https://gateway.pinata.cloud/ipfs/${encryptedFileHash}`);
+  const res = await fetch(ipfsUrl(encryptedFileHash));
   if (!res.ok) throw new Error("Şifreli dosya IPFS'ten alınamadı.");
   const encryptedBytes = await res.arrayBuffer();
 

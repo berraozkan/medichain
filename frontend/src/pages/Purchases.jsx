@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
 import { decryptAndDownload } from "../utils/crypto";
+import { ipfsUrl } from "../utils/ipfs";
 import { WalletIcon, InboxIcon, ClockIcon } from "../components/Icons";
 
 const shortHash = (h) => (h ? `${h.slice(0, 16)}...` : "");
@@ -39,7 +40,7 @@ export default function Purchases() {
     if (metadata[record.id]) return metadata[record.id];
     try {
       const metaHash = await contract.getDataHash(record.id);
-      const res  = await fetch(`https://gateway.pinata.cloud/ipfs/${metaHash}`);
+      const res  = await fetch(ipfsUrl(metaHash));
       const text = await res.text();
       try {
         const meta = JSON.parse(text);
@@ -64,7 +65,7 @@ export default function Purchases() {
       const meta = await fetchMetadata(record);
       if (!meta) return;
       if (meta._legacy) {
-        window.open(`https://gateway.pinata.cloud/ipfs/${meta.hash}`, "_blank");
+        window.open(ipfsUrl(meta.hash), "_blank");
         return;
       }
       await decryptAndDownload(meta);

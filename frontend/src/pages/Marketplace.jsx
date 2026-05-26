@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
 import { decryptAndDownload } from "../utils/crypto";
+import { ipfsUrl } from "../utils/ipfs";
 import { WalletIcon, InboxIcon, ClockIcon } from "../components/Icons";
 
 const shortAddr = (addr) =>
@@ -61,7 +62,7 @@ export default function Marketplace() {
     await Promise.allSettled(
       toFetch.map(async (r) => {
         try {
-          const res = await fetch(`https://gateway.pinata.cloud/ipfs/${r.previewHash}`);
+          const res = await fetch(ipfsUrl(r.previewHash));
           const text = await res.text();
           const meta = JSON.parse(text);
           if (meta.version === 2) {
@@ -156,7 +157,7 @@ export default function Marketplace() {
       // getDataHash now allows both owners and buyers — no special case needed
       const metadataHash = await contract.getDataHash(id);
       const res = await fetch(
-        `https://gateway.pinata.cloud/ipfs/${metadataHash}`,
+        ipfsUrl(metadataHash),
       );
       const text = await res.text();
       try {
@@ -168,7 +169,7 @@ export default function Marketplace() {
         }
       } catch (_) {}
       window.open(
-        `https://gateway.pinata.cloud/ipfs/${metadataHash}`,
+        ipfsUrl(metadataHash),
         "_blank",
       );
     } catch (e) {

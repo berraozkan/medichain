@@ -5,8 +5,9 @@ import { useWallet } from "../context/WalletContext";
 import { encryptFile } from "../utils/crypto";
 import { WalletIcon } from "../components/Icons";
 
-const STEPS      = ["Dosya Seçimi", "Fiyat Belirleme", "Blockchain Kaydı"];
-const CATEGORIES = ["Kan Tahlili", "MRI / Görüntüleme", "EKG", "Röntgen", "Patoloji", "Ameliyat Raporu", "Diğer"];
+const STEPS          = ["Dosya Seçimi", "Fiyat Belirleme", "Blockchain Kaydı"];
+const CATEGORIES     = ["Kan Tahlili", "MRI / Görüntüleme", "EKG", "Röntgen", "Patoloji", "Ameliyat Raporu", "Diğer"];
+const MAX_FILE_BYTES = 3.3 * 1024 * 1024;
 
 function bytesToBase64(bytes) {
   const CHUNK = 8192;
@@ -150,8 +151,6 @@ export default function Upload() {
     setFile(null); setPrice(""); setCategory(CATEGORIES[0]); setDescription("");
     setActiveStep(0); setProgress(0); setLastHash(null);
   }
-
-  const MAX_FILE_BYTES = 3.3 * 1024 * 1024; // ~3.3 MB — Vercel 4.5 MB body limit after base64 inflation
 
   function selectFile(f) {
     if (!f) return;
