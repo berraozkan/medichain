@@ -67,6 +67,9 @@ export default function Upload() {
   async function uploadAndList() {
     if (!contract) { addToast("Önce cüzdanınızı bağlayın.", "error"); return; }
     if (!file)     { addToast("Lütfen bir dosya seçin.", "error"); return; }
+    if (file.size > MAX_FILE_BYTES) {
+      addToast(`Dosya çok büyük (${(file.size / 1024 / 1024).toFixed(1)} MB). Maksimum 3.3 MB.`, "error"); return;
+    }
     if (!price || isNaN(price) || Number(price) <= 0) {
       addToast("Geçerli bir fiyat giriniz (örn: 0.01).", "error"); return;
     }
@@ -148,10 +151,24 @@ export default function Upload() {
     setActiveStep(0); setProgress(0); setLastHash(null);
   }
 
+  const MAX_FILE_BYTES = 3.3 * 1024 * 1024; // ~3.3 MB — Vercel 4.5 MB body limit after base64 inflation
+
+  function selectFile(f) {
+    if (!f) return;
+    if (f.size > MAX_FILE_BYTES) {
+      addToast(
+        `Dosya çok büyük (${(f.size / 1024 / 1024).toFixed(1)} MB). Maksimum boyut 3.3 MB'dır.`,
+        "error",
+        7000
+      );
+      return;
+    }
+    setFile(f);
+  }
+
   function handleDrop(e) {
     e.preventDefault(); setDragOver(false);
-    const f = e.dataTransfer.files[0];
-    if (f) setFile(f);
+    selectFile(e.dataTransfer.files[0]);
   }
 
   if (!account) {
@@ -230,19 +247,22 @@ export default function Upload() {
                   onDragLeave={() => setDragOver(false)}
                   onDrop={handleDrop}
                 >
-                  <input ref={fileInputRef} type="file" onChange={(e) => setFile(e.target.files[0])} />
+                  <input ref={fileInputRef} type="file" onChange={(e) => selectFile(e.target.files[0])} />
                   <div className="file-drop-icon">↑</div>
                   {file ? (
                     <div>
                       <span className="file-name">{file.name}</span>
                       <p style={{ marginTop: 6, fontSize: ".75rem", color: "var(--gray-400)" }}>
-                        {(file.size / 1024).toFixed(1)} KB
+                        {file.size >= 1024 * 1024
+                          ? `${(file.size / 1024 / 1024).toFixed(1)} MB`
+                          : `${(file.size / 1024).toFixed(1)} KB`}
+                        {" / maks. 3.3 MB"}
                       </p>
                     </div>
                   ) : (
                     <p>
                       <strong>Dosya seçmek için tıklayın</strong> ya da buraya sürükleyin.<br />
-                      Tüm dosya biçimleri desteklenmektedir.
+                      Maksimum dosya boyutu: 3.3 MB
                     </p>
                   )}
                 </div>
