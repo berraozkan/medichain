@@ -22,9 +22,7 @@ function getCatClass(category) {
 }
 
 export default function Purchases() {
-  const { account, contract, records, connectWallet, addToast } = useWallet();
-  const [purchases, setPurchases]     = useState([]);
-  const [loading, setLoading]         = useState(false);
+  const { account, contract, records, loadingRecords, connectWallet, addToast } = useWallet();
   const [downloading, setDownloading] = useState(null);
   const [metadata, setMetadata]       = useState({});
 
@@ -32,29 +30,10 @@ export default function Purchases() {
     document.title = "MediChain — Satın Aldıklarım";
   }, []);
 
-  useEffect(() => {
-    if (account && contract && records.length > 0) {
-      loadPurchases();
-    }
-  }, [account, contract, records]);
-
-  async function loadPurchases() {
-    if (!contract || !account) return;
-    setLoading(true);
-    try {
-      const checks = await Promise.all(
-        records.map(async (r) => ({
-          ...r,
-          hasAccess: await contract.hasAccess(account, r.id),
-        }))
-      );
-      setPurchases(checks.filter((r) => r.hasAccess));
-    } catch (e) {
-      addToast("Satın alınanlar yüklenemedi: " + e.message, "error");
-    } finally {
-      setLoading(false);
-    }
-  }
+  // userHasAccess is already loaded in WalletContext — no extra contract calls needed
+  const purchases = records.filter(
+    (r) => r.userHasAccess && account && r.owner.toLowerCase() !== account.toLowerCase()
+  );
 
   async function fetchMetadata(record) {
     if (metadata[record.id]) return metadata[record.id];
@@ -136,11 +115,11 @@ export default function Purchases() {
         </Link>
       </div>
 
-      {loading ? (
+      {loadingRecords ? (
         <div className="empty">
           <div className="empty-icon"><ClockIcon size={44} color="var(--gray-300)" /></div>
-          <h3>Erişim kontrol ediliyor...</h3>
-          <p>Satın aldığınız kayıtlar blockchain'den alınıyor.</p>
+          <h3>Kayıtlar yükleniyor...</h3>
+          <p>Blockchain'den veriler alınıyor, lütfen bekleyin.</p>
         </div>
       ) : purchases.length === 0 ? (
         <div className="empty">
@@ -174,9 +153,9 @@ export default function Purchases() {
 
           <div className="records-grid">
             {purchases.map((r) => {
-              const meta        = metadata[r.id];
+              const meta          = metadata[r.id];
               const isDownloading = downloading === r.id;
-              const catClass    = meta && !meta._legacy ? getCatClass(meta.category) : "cat-other";
+              const catClass      = meta && !meta._legacy ? getCatClass(meta.category) : "cat-other";
 
               return (
                 <div className="record-card" key={r.id}>

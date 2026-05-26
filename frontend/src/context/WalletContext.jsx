@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useRef } from "react";
 import { ethers } from "ethers";
 
-export const CONTRACT_ADDRESS = "0x64e070f33ce3Cba42A887f21701eA26e389B4c6c";
+export const CONTRACT_ADDRESS = "0x96016fDe170Eb2e6E6b54f34C767319Fc8e8D946";
 const SEPOLIA_CHAIN_ID = 11155111n;
 
 export const ABI = [
@@ -31,7 +31,6 @@ export function WalletProvider({ children }) {
   const [contract, setContract]             = useState(null);
   const [records, setRecords]               = useState([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
-  const [wrongNetwork, setWrongNetwork]     = useState(false);
   const [toasts, setToasts]                 = useState([]);
   const toastId = useRef(0);
 
@@ -79,8 +78,6 @@ export function WalletProvider({ children }) {
           }
         }
       }
-      setWrongNetwork(false);
-
       const provider = new ethers.BrowserProvider(window.ethereum);
 
       const signer  = await provider.getSigner();
@@ -130,7 +127,7 @@ export function WalletProvider({ children }) {
 
   return (
     <WalletContext.Provider value={{
-      account, contract, records, loadingRecords, wrongNetwork,
+      account, contract, records, loadingRecords,
       toasts, addToast, removeToast,
       connectWallet, loadRecords,
     }}>

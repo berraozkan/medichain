@@ -11,16 +11,6 @@ import Purchases   from "./pages/Purchases";
 import NotFound    from "./pages/NotFound";
 import "./App.css";
 
-function NetworkBanner() {
-  const { wrongNetwork } = useWallet();
-  if (!wrongNetwork) return null;
-  return (
-    <div className="network-banner">
-      <span style={{ fontWeight: 700 }}>⚠ Yanlış Ağ:</span>
-      <span>MetaMask şu an Sepolia test ağında değil. Lütfen ağı değiştirip tekrar bağlanın.</span>
-    </div>
-  );
-}
 
 function Footer() {
   return (
@@ -49,7 +39,6 @@ export default function App() {
     <WalletProvider>
       <BrowserRouter>
         <Header />
-        <NetworkBanner />
         <div className="page-wrapper">
           <Routes>
             <Route path="/"            element={<Home />}        />

@@ -238,7 +238,7 @@ describe("MediChain", function () {
       const ctx = await listed(await deploy());
       await expect(
         ctx.contract.connect(ctx.other).delistData(1)
-      ).to.be.revertedWith("Sadece sahip kaldirabilis");
+      ).to.be.revertedWith("Sadece sahip kaldirabilir");
     });
 
     it("zaten pasif kaydı kaldırmayı reddeder", async function () {

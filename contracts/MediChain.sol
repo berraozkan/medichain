@@ -79,7 +79,7 @@ contract MediChain is ReentrancyGuard {
     }
 
     function delistData(uint256 _id) external {
-        require(medicalRecords[_id].owner == msg.sender, "Sadece sahip kaldirabilis");
+        require(medicalRecords[_id].owner == msg.sender, "Sadece sahip kaldirabilir");
         require(medicalRecords[_id].isActive, "Zaten pasif");
         medicalRecords[_id].isActive = false;
     }
