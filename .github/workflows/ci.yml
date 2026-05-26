@@ -28,9 +28,6 @@ jobs:
 
       - name: Run tests
         run: npx hardhat test test/MediChain.ts
-        env:
-          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
 
   frontend-build:
     name: Frontend Build
