@@ -1092,7 +1092,8 @@ body {
   margin-bottom: 32px;
 }
 .stat-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius);
   padding: 20px 24px;
