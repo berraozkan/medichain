@@ -935,6 +935,77 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
   gap: 16px;
 }
+/* ── RECORD LIST (MyData) ── */
+.record-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(12px);
+}
+.record-list-item {
+  border-bottom: 1px solid var(--gray-100);
+}
+.record-list-item:last-child {
+  border-bottom: none;
+}
+.record-list-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  transition: background 0.12s;
+}
+.record-list-row:hover {
+  background: rgba(2,132,199,0.04);
+}
+.record-list-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 180px;
+  flex-shrink: 0;
+}
+.record-list-hash {
+  flex: 1;
+  font-family: "Courier New", monospace;
+  font-size: 0.78rem;
+  color: var(--gray-500);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.record-list-price {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 90px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.record-list-access {
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 70px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.record-list-status {
+  min-width: 60px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.record-list-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 .record-card {
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(12px);
@@ -1750,6 +1821,23 @@ textarea.form-input {
 [data-theme="dark"] body {
   background: #0f172a;
   color: #f1f5f9;
+}
+
+[data-theme="dark"] .record-list {
+  background: #1e293b;
+  border-color: #334155;
+}
+[data-theme="dark"] .record-list-item {
+  border-bottom-color: #334155;
+}
+[data-theme="dark"] .record-list-row:hover {
+  background: rgba(2,132,199,0.08);
+}
+[data-theme="dark"] .record-list-hash {
+  color: #94a3b8;
+}
+[data-theme="dark"] .record-list-price {
+  color: #38bdf8;
 }
 
 [data-theme="dark"] .card,
