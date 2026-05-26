@@ -639,7 +639,7 @@ body {
 }
 .page-subtitle {
   font-size: 0.95rem;
-  color: var(--gray-500);
+  color: var(--gray-600);
   margin-top: 8px;
   max-width: 760px;
   line-height: 1.7;
