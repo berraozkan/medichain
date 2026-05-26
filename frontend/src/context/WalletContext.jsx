@@ -69,7 +69,7 @@ export function WalletProvider({ children }) {
               params: [{
                 chainId: "0xaa36a7",
                 chainName: "Sepolia",
-                rpcUrls: ["https://eth-sepolia.g.alchemy.com/v2/OIMag4uYY7GuwhtZfWcBo"],
+                rpcUrls: [import.meta.env.VITE_SEPOLIA_RPC_URL || "https://rpc.ankr.com/eth_sepolia"],
                 nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
                 blockExplorerUrls: ["https://sepolia.etherscan.io"],
               }],
@@ -89,7 +89,7 @@ export function WalletProvider({ children }) {
       const c = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
       setContract(c);
       addToast("Cüzdan başarıyla bağlandı!", "success");
-      await loadRecords(c);
+      await loadRecords(c, address);
 
       window.ethereum.on("chainChanged", () => window.location.reload());
       window.ethereum.on("accountsChanged", () => window.location.reload());
@@ -98,20 +98,27 @@ export function WalletProvider({ children }) {
     }
   }
 
-  async function loadRecords(c) {
-    const target = c || contract;
+  async function loadRecords(c, addr) {
+    const target  = c || contract;
+    const userAddr = addr || account;
     if (!target) return;
     try {
       setLoadingRecords(true);
       const count = await target.dataCount();
-      const ids = Array.from({ length: Number(count) }, (_, i) => i + 1);
-      const results = await Promise.all(ids.map((i) => target.medicalRecords(i)));
+      const ids   = Array.from({ length: Number(count) }, (_, i) => i + 1);
+      const [results, accessResults] = await Promise.all([
+        Promise.all(ids.map((i) => target.medicalRecords(i))),
+        userAddr
+          ? Promise.all(ids.map((i) => target.hasAccess(userAddr, i)))
+          : Promise.resolve(ids.map(() => false)),
+      ]);
       const items = results.map((r, idx) => ({
         id: ids[idx],
         previewHash: r.previewHash,
         price: r.price,
         owner: r.owner,
         isActive: r.isActive,
+        userHasAccess: accessResults[idx],
       }));
       setRecords(items);
     } catch (e) {

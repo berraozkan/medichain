@@ -324,11 +324,12 @@ export default function Marketplace() {
       ) : (
         <div className="market-grid">
           {filtered.map((r) => {
-            const isOwner = account?.toLowerCase() === r.owner.toLowerCase();
-            const isBuying = purchasing === r.id;
-            const isViewing = viewing === r.id;
-            const meta = metadata[r.id];
-            const catClass = meta?.category ? CATEGORY_STYLES[meta.category] || "cat-other" : null;
+            const isOwner      = account?.toLowerCase() === r.owner.toLowerCase();
+            const canDownload  = isOwner || r.userHasAccess;
+            const isBuying     = purchasing === r.id;
+            const isViewing    = viewing === r.id;
+            const meta         = metadata[r.id];
+            const catClass     = meta?.category ? CATEGORY_STYLES[meta.category] || "cat-other" : null;
 
             return (
               <div className="market-card" key={r.id}>
@@ -401,7 +402,7 @@ export default function Marketplace() {
                 </div>
 
                 <div className="record-actions">
-                  {r.isActive && !isOwner && (
+                  {r.isActive && !isOwner && !r.userHasAccess && (
                     <button
                       className="btn btn-success btn-sm"
                       onClick={() => purchaseRecord(r.id, r.price)}
@@ -417,20 +418,22 @@ export default function Marketplace() {
                       )}
                     </button>
                   )}
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => viewRecord(r.id)}
-                    disabled={isViewing}
-                    style={{ flex: 1, justifyContent: "center" }}
-                  >
-                    {isViewing ? (
-                      <>
-                        <span className="spinner-dark" /> Yükleniyor
-                      </>
-                    ) : (
-                      "İndir"
-                    )}
-                  </button>
+                  {canDownload && (
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => viewRecord(r.id)}
+                      disabled={isViewing}
+                      style={{ flex: 1, justifyContent: "center" }}
+                    >
+                      {isViewing ? (
+                        <>
+                          <span className="spinner-dark" /> Yükleniyor
+                        </>
+                      ) : (
+                        "İndir"
+                      )}
+                    </button>
+                  )}
                   {isOwner && (
                     <Link
                       to="/my-data"
@@ -438,6 +441,15 @@ export default function Marketplace() {
                       style={{ flex: 1, justifyContent: "center" }}
                     >
                       Yönet
+                    </Link>
+                  )}
+                  {r.userHasAccess && !isOwner && (
+                    <Link
+                      to="/purchases"
+                      className="btn btn-outline btn-sm"
+                      style={{ flex: 1, justifyContent: "center" }}
+                    >
+                      Satın Alındı
                     </Link>
                   )}
                 </div>
