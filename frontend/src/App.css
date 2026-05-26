@@ -1759,8 +1759,15 @@ textarea.form-input {
 [data-theme="dark"] .market-card,
 [data-theme="dark"] .upload-success,
 [data-theme="dark"] .empty {
-  background: rgba(30, 41, 59, 0.9);
+  background: #1e293b;
+  backdrop-filter: none;
   border-color: #334155;
+}
+
+[data-theme="dark"] .record-card:hover,
+[data-theme="dark"] .market-card:hover {
+  background: #243148;
+  border-color: #475569;
 }
 
 [data-theme="dark"] .home-page {
