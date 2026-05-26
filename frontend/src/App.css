@@ -333,6 +333,12 @@ body {
 }
 .wallet-btn.connected .wallet-dot {
   background: var(--success-accent);
+  animation: walletPulse 2s ease-in-out infinite;
+}
+@keyframes walletPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
+  70%  { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
 }
 
 /* ── BUTTONS ── */
@@ -492,7 +498,10 @@ body {
 }
 .hero h1 em {
   font-style: normal;
-  color: #a5b4fc; /* indigo-300 — eskisi #60a5fa (mavi-300) */
+  background: linear-gradient(135deg, #a5b4fc 0%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .hero-text p {
   font-size: 0.95rem;
@@ -1086,6 +1095,18 @@ body {
   border-radius: var(--radius);
   padding: 20px 24px;
   box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--success-accent) 100%);
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 .stat-value {
   font-size: 1.8rem;
@@ -1339,7 +1360,7 @@ body {
   cursor: default;
 }
 .feature-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), 0 0 0 1.5px var(--card-color, var(--gray-300));
   transform: translateY(-2px);
 }
 .feature-icon {
@@ -1360,11 +1381,18 @@ body {
 
 /* ── CTA SECTION ── */
 .cta-section {
-  background: var(--navy);
+  background: linear-gradient(-45deg, #1a3e5c, #1e2a5e, #2d1b4e, #1a3e5c);
+  background-size: 400% 400%;
+  animation: ctaGradient 10s ease infinite;
   border-radius: var(--radius);
   padding: 56px 32px;
   text-align: center;
   color: white;
+}
+@keyframes ctaGradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 .cta-title {
   font-size: 1.4rem;

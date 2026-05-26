@@ -150,7 +150,7 @@ export default function Home() {
           <h2 className="section-title">Kontrol Tamamen Sizde</h2>
           <div className="features-grid" style={{ marginTop: 20 }}>
             {features.map((f) => (
-              <div className="feature-card" key={f.title}>
+              <div className="feature-card" key={f.title} style={{ '--card-color': f.color }}>
                 <div style={{
                   width: 46, height: 46, borderRadius: 10,
                   background: f.bg,
