@@ -85,7 +85,16 @@ export default function Marketplace() {
     }
     setViewing(id);
     try {
-      const metadataHash = await contract.getDataHash(id);
+      const record = records.find((r) => r.id === id);
+      const isOwner = account?.toLowerCase() === record?.owner?.toLowerCase();
+
+      let metadataHash;
+      if (isOwner) {
+        metadataHash = record.ipfsHash;
+      } else {
+        metadataHash = await contract.getDataHash(id);
+      }
+
       const res = await fetch(
         `https://gateway.pinata.cloud/ipfs/${metadataHash}`,
       );
@@ -102,8 +111,8 @@ export default function Marketplace() {
         `https://gateway.pinata.cloud/ipfs/${metadataHash}`,
         "_blank",
       );
-    } catch {
-      addToast("Bu kayda erişim izniniz bulunmuyor.", "error");
+    } catch (e) {
+      addToast("İndirme hatası: " + (e?.message || "Bilinmeyen hata"), "error");
     } finally {
       setViewing(null);
     }
