@@ -405,16 +405,7 @@ export default function Marketplace() {
                       {shortAddr(r.owner)}
                     </span>
                   </div>
-                  {meta?.description && (
-                    <div className="record-row">
-                      <span className="record-row-label">Açıklama</span>
-                      <span className="record-row-value" style={{ fontStyle: "italic" }}>
-                        {meta.description.length > 60
-                          ? meta.description.slice(0, 60) + "…"
-                          : meta.description}
-                      </span>
-                    </div>
-                  )}
+
                 </div>
 
                 <div className="record-actions">
