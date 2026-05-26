@@ -1,7 +1,7 @@
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-ignition-ethers";
 import dotenv from "dotenv";
-dotenv.config();
+try { dotenv.config(); } catch {}
 
 /** @type import('hardhat/config').HardhatUserConfig */
 export default {
