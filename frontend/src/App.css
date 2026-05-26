@@ -936,7 +936,8 @@ body {
   gap: 16px;
 }
 .record-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius);
   padding: 20px;
@@ -1026,7 +1027,8 @@ body {
   gap: 20px;
 }
 .market-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius);
   padding: 24px;
@@ -1190,7 +1192,8 @@ body {
 .upload-success {
   text-align: center;
   padding: 60px 24px;
-  background: white;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
   border-radius: var(--radius);
   border: 1px solid var(--gray-200);
   box-shadow: var(--shadow-sm);
