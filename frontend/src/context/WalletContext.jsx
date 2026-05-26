@@ -98,11 +98,15 @@ export function WalletProvider({ children }) {
     try {
       setLoadingRecords(true);
       const count = await target.dataCount();
-      const items = [];
-      for (let i = 1; i <= Number(count); i++) {
-        const r = await target.medicalRecords(i);
-        items.push({ id: i, ipfsHash: r.ipfsHash, price: r.price, owner: r.owner, isActive: r.isActive });
-      }
+      const ids = Array.from({ length: Number(count) }, (_, i) => i + 1);
+      const results = await Promise.all(ids.map((i) => target.medicalRecords(i)));
+      const items = results.map((r, idx) => ({
+        id: ids[idx],
+        ipfsHash: r.ipfsHash,
+        price: r.price,
+        owner: r.owner,
+        isActive: r.isActive,
+      }));
       setRecords(items);
     } catch (e) {
       addToast("Veriler yüklenemedi: " + e.message, "error");
