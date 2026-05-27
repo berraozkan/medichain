@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
-import { useWallet } from "../context/WalletContext";
+import { useWallet, CONTRACT_ADDRESS } from "../context/WalletContext";
 import { encryptFile, encryptDataHash } from "../utils/crypto";
 import { uploadToIPFS, ipfsUrl, fetchFromIPFS } from "../utils/ipfs";
 import { WalletIcon, ClockIcon, FileIcon } from "../components/Icons";
@@ -39,12 +39,26 @@ export default function MyData() {
       const filter   = contract.filters.DataPurchased(recordId, null);
       const events   = await contract.queryFilter(filter, DEPLOY_BLOCK, "latest");
       const uniqueBuyers = [...new Set(events.map((e) => e.args.buyer))];
-      const withAccess = await Promise.all(
-        uniqueBuyers.map(async (addr) => ({
-          address:   addr,
-          hasAccess: await contract.hasAccess(addr, recordId),
-        }))
-      );
+      let withAccess;
+      if (uniqueBuyers.length === 0) {
+        withAccess = [];
+      } else {
+        const MULTICALL3 = "0xcA11bde05977b3631167028862bE2a173976CA11";
+        const MC_ABI = ["function aggregate3(tuple(address target, bool allowFailure, bytes callData)[] calls) view returns (tuple(bool success, bytes returnData)[] returnData)"];
+        const iface = contract.interface;
+        const provider = contract.runner?.provider ?? contract.runner;
+        const mc = new ethers.Contract(MULTICALL3, MC_ABI, provider);
+        const calls = uniqueBuyers.map((addr) => ({
+          target: CONTRACT_ADDRESS,
+          allowFailure: false,
+          callData: iface.encodeFunctionData("hasAccess", [addr, recordId]),
+        }));
+        const results = await mc.aggregate3(calls);
+        withAccess = uniqueBuyers.map((addr, i) => ({
+          address: addr,
+          hasAccess: iface.decodeFunctionResult("hasAccess", results[i].returnData)[0],
+        }));
+      }
       setPurchasers((prev) => ({ ...prev, [recordId]: withAccess }));
     } catch (e) {
       addToast("Satın alan listesi alınamadı: " + e.message, "error");
