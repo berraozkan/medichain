@@ -45,8 +45,8 @@ Akıllı sözleşmede `previewHash` public mapping'de, `dataHash` private mappin
 ## Akıllı Sözleşme
 
 **Ağ:** Sepolia Testnet  
-**Adres:** `0x96016fDe170Eb2e6E6b54f34C767319Fc8e8D946`  
-**Explorer:** [sepolia.etherscan.io](https://sepolia.etherscan.io/address/0x96016fDe170Eb2e6E6b54f34C767319Fc8e8D946)
+**Adres:** `0x6f6b3AA1649093aBCA0fc1eC53909e4A5022A08C`  
+**Explorer:** [sepolia.etherscan.io](https://sepolia.etherscan.io/address/0x6f6b3AA1649093aBCA0fc1eC53909e4A5022A08C)
 
 ### Fonksiyonlar
 
@@ -170,7 +170,7 @@ MEDICHAIN-main/
 ├── contracts/
 │   └── MediChain.sol              # Akıllı sözleşme (OpenZeppelin ReentrancyGuard)
 ├── test/
-│   └── MediChain.ts               # 42 sözleşme testi
+│   └── MediChain.ts               # 51 sözleşme testi
 ├── ignition/modules/
 │   └── MediChain.js               # Hardhat Ignition deploy modülü
 ├── deploy.js                      # Alternatif deploy scripti
