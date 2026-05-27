@@ -35,8 +35,9 @@ export default function MyData() {
     if (!contract) return;
     setLoadingBuyers((prev) => ({ ...prev, [recordId]: true }));
     try {
+      const DEPLOY_BLOCK = 10929902;
       const filter   = contract.filters.DataPurchased(recordId, null);
-      const events   = await contract.queryFilter(filter, 0, "latest");
+      const events   = await contract.queryFilter(filter, DEPLOY_BLOCK, "latest");
       const uniqueBuyers = [...new Set(events.map((e) => e.args.buyer))];
       const withAccess = await Promise.all(
         uniqueBuyers.map(async (addr) => ({
