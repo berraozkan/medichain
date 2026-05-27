@@ -36,8 +36,11 @@ export default function MyData() {
     setLoadingBuyers((prev) => ({ ...prev, [recordId]: true }));
     try {
       const DEPLOY_BLOCK = 10929902;
-      const filter   = contract.filters.DataPurchased(recordId, null);
-      const events   = await contract.queryFilter(filter, DEPLOY_BLOCK, "latest");
+      // MetaMask blocks eth_getLogs — use a direct read-only provider for event queries
+      const readProvider = new ethers.JsonRpcProvider("https://ethereum-sepolia-rpc.publicnode.com");
+      const readContract = new ethers.Contract(CONTRACT_ADDRESS, contract.interface, readProvider);
+      const filter   = readContract.filters.DataPurchased(recordId, null);
+      const events   = await readContract.queryFilter(filter, DEPLOY_BLOCK, "latest");
       const uniqueBuyers = [...new Set(events.map((e) => e.args.buyer))];
       let withAccess;
       if (uniqueBuyers.length === 0) {
