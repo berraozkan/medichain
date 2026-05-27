@@ -27,6 +27,11 @@ export const ABI = [
   "event DataDeleted(uint256 indexed id, address indexed owner)",
 ];
 
+const MULTICALL3_ADDRESS = "0xcA11bde05977b3631167028862bE2a173976CA11";
+const MULTICALL3_ABI = [
+  "function aggregate3(tuple(address target, bool allowFailure, bytes callData)[] calls) view returns (tuple(bool success, bytes returnData)[] returnData)",
+];
+
 const WalletContext = createContext(null);
 
 export function WalletProvider({ children }) {
@@ -101,27 +106,35 @@ export function WalletProvider({ children }) {
   }
 
   async function loadRecords(c, addr) {
-    const target  = c || contract;
+    const target   = c || contract;
     const userAddr = addr || account;
     if (!target) return;
     try {
       setLoadingRecords(true);
-      const count = await target.dataCount();
-      const ids   = Array.from({ length: Number(count) }, (_, i) => i + 1);
-      const [results, accessResults] = await Promise.all([
-        Promise.all(ids.map((i) => target.medicalRecords(i))),
-        userAddr
-          ? Promise.all(ids.map((i) => target.hasAccess(userAddr, i)))
-          : Promise.resolve(ids.map(() => false)),
-      ]);
-      const items = results.map((r, idx) => ({
-        id: ids[idx],
-        previewHash: r.previewHash,
-        price: r.price,
-        owner: r.owner,
-        isActive: r.isActive,
-        userHasAccess: accessResults[idx],
-      }));
+      const count = Number(await target.dataCount());
+      if (count === 0) { setRecords([]); return; }
+
+      const ids      = Array.from({ length: count }, (_, i) => i + 1);
+      const iface    = new ethers.Interface(ABI);
+      const provider = target.runner?.provider ?? target.runner;
+      const multicall = new ethers.Contract(MULTICALL3_ADDRESS, MULTICALL3_ABI, provider);
+
+      // Build one batch: medicalRecords(id) + optional hasAccess(addr, id) per record
+      const callsPerRecord = userAddr ? 2 : 1;
+      const calls = ids.flatMap((id) => {
+        const base = [{ target: CONTRACT_ADDRESS, allowFailure: false, callData: iface.encodeFunctionData("medicalRecords", [id]) }];
+        if (userAddr) base.push({ target: CONTRACT_ADDRESS, allowFailure: false, callData: iface.encodeFunctionData("hasAccess", [userAddr, id]) });
+        return base;
+      });
+
+      const results = await multicall.aggregate3(calls);
+
+      const items = ids.map((id, idx) => {
+        const base   = idx * callsPerRecord;
+        const rec    = iface.decodeFunctionResult("medicalRecords", results[base].returnData);
+        const access = userAddr ? iface.decodeFunctionResult("hasAccess", results[base + 1].returnData)[0] : false;
+        return { id, previewHash: rec.previewHash, price: rec.price, owner: rec.owner, isActive: rec.isActive, userHasAccess: access };
+      });
       setRecords(items);
     } catch (e) {
       addToast("Veriler yüklenemedi: " + e.message, "error");
