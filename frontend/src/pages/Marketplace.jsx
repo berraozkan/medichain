@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
 import { decryptAndDownload } from "../utils/crypto";
-import { ipfsUrl } from "../utils/ipfs";
+import { fetchFromIPFS, ipfsUrl } from "../utils/ipfs";
 import { WalletIcon, InboxIcon, ClockIcon } from "../components/Icons";
 
 const shortAddr = (addr) =>
@@ -62,7 +62,7 @@ export default function Marketplace() {
     await Promise.allSettled(
       toFetch.map(async (r) => {
         try {
-          const res = await fetch(ipfsUrl(r.previewHash));
+          const res = await fetchFromIPFS(r.previewHash);
           const text = await res.text();
           const meta = JSON.parse(text);
           if (meta.version === 2) {
@@ -156,9 +156,7 @@ export default function Marketplace() {
     try {
       // getDataHash now allows both owners and buyers — no special case needed
       const metadataHash = await contract.getDataHash(id);
-      const res = await fetch(
-        ipfsUrl(metadataHash),
-      );
+      const res = await fetchFromIPFS(metadataHash);
       const text = await res.text();
       try {
         const meta = JSON.parse(text);
