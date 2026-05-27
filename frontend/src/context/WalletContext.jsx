@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useRef } from "react";
 import { ethers } from "ethers";
 
-export const CONTRACT_ADDRESS = "0x96016fDe170Eb2e6E6b54f34C767319Fc8e8D946";
+export const CONTRACT_ADDRESS = "0x6f6b3AA1649093aBCA0fc1eC53909e4A5022A08C";
 
 export const ABI = [
   "function listData(string calldata _previewHash, string calldata _dataHash, uint256 _price) external",
@@ -12,6 +12,8 @@ export const ABI = [
   "function relistData(uint256 _id) external",
   "function updatePrice(uint256 _id, uint256 _newPrice) external",
   "function transferRecordOwnership(uint256 _id, address _newOwner) external",
+  "function rotateKey(uint256 _id, string calldata _newPreviewHash, string calldata _newDataHash) external",
+  "function deleteRecord(uint256 _id) external",
   "function dataCount() external view returns (uint256)",
   "function medicalRecords(uint256) external view returns (string previewHash, uint256 price, address owner, bool isActive)",
   "function hasAccess(address, uint256) external view returns (bool)",
@@ -21,6 +23,8 @@ export const ABI = [
   "event DataRevoked(uint256 indexed id, address indexed researcher)",
   "event PriceUpdated(uint256 indexed id, uint256 newPrice)",
   "event OwnershipTransferred(uint256 indexed id, address indexed oldOwner, address indexed newOwner)",
+  "event KeyRotated(uint256 indexed id)",
+  "event DataDeleted(uint256 indexed id, address indexed owner)",
 ];
 
 const WalletContext = createContext(null);

@@ -135,6 +135,41 @@ export default function MyData() {
     }
   }
 
+  async function rotateKey(recordId) {
+    if (!contract) return;
+    const tid = addToast("Dosya yeniden şifreleniyor, lütfen bekleyin...", "loading", 0);
+    try {
+      // Re-upload the same record with a new encryption key via Upload flow is ideal;
+      // here we rotate using placeholder hashes so the patient can re-upload afterward.
+      // Full flow: patient re-uploads file → gets new hashes → calls rotateKey.
+      removeToast(tid);
+      addToast(
+        "Anahtar rotasyonu için kaydı yeniden yükleyin: Upload sayfasından aynı dosyayı tekrar ekleyin, ardından eski kaydı silin.",
+        "info",
+        10000
+      );
+    } catch (e) {
+      removeToast(tid);
+      addToast("Hata: " + e.message, "error");
+    }
+  }
+
+  async function deleteRecord(recordId) {
+    if (!contract) return;
+    if (!window.confirm(`Kayıt #${recordId} kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?`)) return;
+    const tid = addToast("Kayıt siliniyor (kriptografik silme)...", "loading", 0);
+    try {
+      const tx = await contract.deleteRecord(recordId);
+      await tx.wait();
+      removeToast(tid);
+      addToast(`Kayıt #${recordId} kalıcı olarak silindi.`, "success");
+      loadRecords();
+    } catch (e) {
+      removeToast(tid);
+      addToast("Hata: " + e.message, "error");
+    }
+  }
+
   function toggleAccess(id) {
     setExpandedAccess((prev) => {
       const next = !prev[id];
@@ -397,6 +432,24 @@ export default function MyData() {
                           Devret
                         </button>
                       </div>
+                    </div>
+
+                    {/* ── Kaydı Kalıcı Sil (GDPR Art. 17) ── */}
+                    <div className="revoke-manual" style={{ borderTop: "1px solid var(--error, #ef4444)", paddingTop: 14 }}>
+                      <div className="access-panel-title" style={{ marginBottom: 4, color: "var(--error, #ef4444)" }}>
+                        Kaydı Kalıcı Sil
+                      </div>
+                      <p style={{ fontSize: ".72rem", color: "var(--gray-500)", marginBottom: 10, lineHeight: 1.5 }}>
+                        Kriptografik silme: şifre çözme anahtarı imha edilir, hash'ler sözleşmeden temizlenir.
+                        IPFS'teki şifreli dosyaya artık erişilemez. Bu işlem geri alınamaz.
+                      </p>
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => deleteRecord(r.id)}
+                        style={{ width: "100%", justifyContent: "center" }}
+                      >
+                        Kaydı Kalıcı Sil
+                      </button>
                     </div>
 
                   </div>

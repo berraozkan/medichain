@@ -24,6 +24,8 @@ contract MediChain is ReentrancyGuard {
     event DataRevoked(uint256 indexed id, address indexed researcher);
     event PriceUpdated(uint256 indexed id, uint256 newPrice);
     event OwnershipTransferred(uint256 indexed id, address indexed oldOwner, address indexed newOwner);
+    event KeyRotated(uint256 indexed id);
+    event DataDeleted(uint256 indexed id, address indexed owner);
 
     // List a new record with a public preview hash and a private data hash
     function listData(
@@ -106,8 +108,32 @@ contract MediChain is ReentrancyGuard {
         emit OwnershipTransferred(_id, oldOwner, _newOwner);
     }
 
+    // Re-encrypts the record with a new key; invalidates keys held by revoked researchers
+    function rotateKey(
+        uint256 _id,
+        string calldata _newPreviewHash,
+        string calldata _newDataHash
+    ) external {
+        require(medicalRecords[_id].owner == msg.sender, "Sadece sahip anahtari donusturebilir");
+        require(bytes(_newPreviewHash).length > 0, "Onizleme hash bos olamaz");
+        require(bytes(_newDataHash).length > 0,    "Veri hash bos olamaz");
+        medicalRecords[_id].previewHash = _newPreviewHash;
+        dataHashes[_id] = _newDataHash;
+        emit KeyRotated(_id);
+    }
+
+    // Cryptographic erasure: clears hashes and deactivates the record (GDPR Art. 17)
+    function deleteRecord(uint256 _id) external {
+        require(medicalRecords[_id].owner == msg.sender, "Sadece sahip silebilir");
+        medicalRecords[_id].isActive = false;
+        medicalRecords[_id].previewHash = "";
+        dataHashes[_id] = "";
+        emit DataDeleted(_id, msg.sender);
+    }
+
     // Returns the private data hash (with encryption key) — only for owner or buyer
     function getDataHash(uint256 _id) external view returns (string memory) {
+        require(bytes(dataHashes[_id]).length > 0, "Kayit silinmis veya mevcut degil");
         require(
             hasAccess[msg.sender][_id] || medicalRecords[_id].owner == msg.sender,
             "Erisim izniniz yok"

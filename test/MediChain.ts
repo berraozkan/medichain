@@ -355,4 +355,78 @@ describe("MediChain", function () {
       expect(await contract.totalEarnings(patient.address)).to.equal(PRICE * 3n);
     });
   });
+
+  // ── rotateKey ─────────────────────────────────────────────────────────────
+  describe("rotateKey", function () {
+    it("hash'leri günceller", async function () {
+      const ctx = await listed(await deploy());
+      await ctx.contract.connect(ctx.patient).rotateKey(1, "QmNewPreview", "QmNewData");
+      const r = await ctx.contract.medicalRecords(1);
+      expect(r.previewHash).to.equal("QmNewPreview");
+      expect(await ctx.contract.connect(ctx.patient).getDataHash(1)).to.equal("QmNewData");
+    });
+
+    it("KeyRotated olayını yayar", async function () {
+      const ctx = await listed(await deploy());
+      await expect(ctx.contract.connect(ctx.patient).rotateKey(1, "QmNewPreview", "QmNewData"))
+        .to.emit(ctx.contract, "KeyRotated")
+        .withArgs(1n);
+    });
+
+    it("erişimi iptal edilen araştırmacı eski hash'i okuyamaz, yenisini de okuyamaz", async function () {
+      const ctx = await purchased(await deploy());
+      await ctx.contract.connect(ctx.patient).revokeAccess(1, ctx.researcher.address);
+      await ctx.contract.connect(ctx.patient).rotateKey(1, "QmNewPreview", "QmNewData");
+      await expect(
+        ctx.contract.connect(ctx.researcher).getDataHash(1)
+      ).to.be.revertedWith("Erisim izniniz yok");
+    });
+
+    it("yalnızca sahip anahtar döndürebilir", async function () {
+      const ctx = await listed(await deploy());
+      await expect(
+        ctx.contract.connect(ctx.other).rotateKey(1, "QmNewPreview", "QmNewData")
+      ).to.be.revertedWith("Sadece sahip anahtari donusturebilir");
+    });
+
+    it("boş hash reddeder", async function () {
+      const ctx = await listed(await deploy());
+      await expect(
+        ctx.contract.connect(ctx.patient).rotateKey(1, "", "QmNewData")
+      ).to.be.revertedWith("Onizleme hash bos olamaz");
+    });
+  });
+
+  // ── deleteRecord ──────────────────────────────────────────────────────────
+  describe("deleteRecord", function () {
+    it("kaydı pasife alır ve hash'leri temizler (kriptografik silme)", async function () {
+      const ctx = await listed(await deploy());
+      await ctx.contract.connect(ctx.patient).deleteRecord(1);
+      const r = await ctx.contract.medicalRecords(1);
+      expect(r.isActive).to.be.false;
+      expect(r.previewHash).to.equal("");
+    });
+
+    it("DataDeleted olayını yayar", async function () {
+      const ctx = await listed(await deploy());
+      await expect(ctx.contract.connect(ctx.patient).deleteRecord(1))
+        .to.emit(ctx.contract, "DataDeleted")
+        .withArgs(1n, ctx.patient.address);
+    });
+
+    it("silme sonrası dataHash okunamaz", async function () {
+      const ctx = await listed(await deploy());
+      await ctx.contract.connect(ctx.patient).deleteRecord(1);
+      await expect(
+        ctx.contract.connect(ctx.patient).getDataHash(1)
+      ).to.be.revertedWith("Kayit silinmis veya mevcut degil");
+    });
+
+    it("yalnızca sahip silebilir", async function () {
+      const ctx = await listed(await deploy());
+      await expect(
+        ctx.contract.connect(ctx.other).deleteRecord(1)
+      ).to.be.revertedWith("Sadece sahip silebilir");
+    });
+  });
 });
