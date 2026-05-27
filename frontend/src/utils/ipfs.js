@@ -11,18 +11,17 @@ export const ipfsUrl = (hash) => `${IPFS_GATEWAY}/${hash}`;
 // Race multiple gateways, return first successful response
 export async function fetchFromIPFS(hash) {
   const controllers = GATEWAYS.map(() => new AbortController());
-  try {
-    return await Promise.any(
-      GATEWAYS.map((gw, i) =>
-        fetch(`${gw}/${hash}`, { signal: controllers[i].signal }).then((r) => {
-          if (!r.ok) throw new Error(`${r.status}`);
-          return r;
-        })
-      )
-    );
-  } finally {
-    controllers.forEach((c) => c.abort());
-  }
+  const winner = await Promise.any(
+    GATEWAYS.map((gw, i) =>
+      fetch(`${gw}/${hash}`, { signal: controllers[i].signal }).then((r) => {
+        if (!r.ok) throw new Error(`${r.status}`);
+        return { res: r, i };
+      })
+    )
+  );
+  // Abort only the losers, not the winner whose body is still being streamed
+  controllers.forEach((c, i) => { if (i !== winner.i) c.abort(); });
+  return winner.res;
 }
 
 function bytesToBase64(bytes) {
