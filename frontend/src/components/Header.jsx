@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { useWallet } from "../context/WalletContext";
 
@@ -20,6 +20,13 @@ function MoonIcon() {
     </svg>
   );
 }
+function SystemIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+    </svg>
+  );
+}
 
 const shortAddr = (addr) => (addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : "");
 
@@ -27,15 +34,34 @@ export default function Header() {
   const { account, connectWallet } = useWallet();
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState(
-    () => document.documentElement.getAttribute("data-theme") || "light"
+    () => localStorage.getItem("theme") || "system"
   );
 
-  function toggleTheme() {
-    const next = theme === "light" ? "dark" : "light";
+  function applyTheme(t) {
+    if (t === "system") {
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+    } else {
+      document.documentElement.setAttribute("data-theme", t);
+    }
+  }
+
+  useEffect(() => {
+    if (theme !== "system") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => applyTheme("system");
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [theme]);
+
+  function cycleTheme() {
+    const next = theme === "light" ? "dark" : theme === "dark" ? "system" : "light";
     setTheme(next);
     localStorage.setItem("theme", next);
-    document.documentElement.setAttribute("data-theme", next);
+    applyTheme(next);
   }
+
+  const THEME_LABELS = { light: "Aydınlık", dark: "Karanlık", system: "Sistem" };
 
   const navLinks = [
     { to: "/",            label: "Ana Sayfa",       end: true },
@@ -71,8 +97,8 @@ export default function Header() {
 
         <div className="header-right">
           <span className="badge-network">Sepolia</span>
-          <button className="theme-btn" onClick={toggleTheme} aria-label="Tema değiştir" title={theme === "dark" ? "Aydınlık mod" : "Karanlık mod"}>
-            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+          <button className="theme-btn" onClick={cycleTheme} aria-label="Tema değiştir" title={`Mod: ${THEME_LABELS[theme]} — tıkla: ${THEME_LABELS[theme === "light" ? "dark" : theme === "dark" ? "system" : "light"]}`}>
+            {theme === "dark" ? <SunIcon /> : theme === "system" ? <SystemIcon /> : <MoonIcon />}
           </button>
           {account ? (
             <button className="wallet-btn connected">

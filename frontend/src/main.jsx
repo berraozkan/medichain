@@ -2,8 +2,13 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 
-const saved = localStorage.getItem("theme");
-if (saved) document.documentElement.setAttribute("data-theme", saved);
+const saved = localStorage.getItem("theme") || "system";
+if (saved === "system") {
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+} else {
+  document.documentElement.setAttribute("data-theme", saved);
+}
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
