@@ -11,7 +11,12 @@ Tarayıcı (React + ethers.js)
     │
     ├── Web Crypto API → AES-256-GCM şifreleme (istemci tarafında)
     │
-    ├── /api/upload-ipfs (Vercel serverless) → Pinata → IPFS
+    ├── /api/upload-ipfs   (Vercel serverless) → Pinata → IPFS
+    ├── /api/prepare-key   (Vercel serverless) → HMAC-SHA256 K türetme (yükleme)
+    ├── /api/get-key       (Vercel serverless) → on-chain hasAccess + K (indirme)
+    │
+    ├── Multicall3 (0xcA11b…CA11) → tüm kayıt okumaları tek RPC round-trip
+    ├── fetchFromIPFS → Pinata / ipfs.io / dweb.link gateway yarışı
     │
     └── MetaMask → MediChain.sol (Sepolia Testnet)
 ```
@@ -179,26 +184,28 @@ MEDICHAIN-main/
 ├── hardhat.config.js
 ├── .env.example                   # Sözleşme deploy ortam değişkenleri
 ├── api/
-│   └── upload-ipfs.js             # Vercel serverless: Pinata JWT proxy
+│   ├── upload-ipfs.js             # Vercel serverless: Pinata JWT proxy
+│   ├── prepare-key.js             # Hasta endpoint: imza doğrula → HMAC K türet
+│   └── get-key.js                 # Araştırmacı endpoint: on-chain hasAccess → K türet
 ├── vercel.json                    # Vercel build + rewrite konfigürasyonu
 └── frontend/
     ├── .env.example               # Frontend ortam değişkenleri
     ├── vite.config.js             # Code splitting: ethers / vendor / app
     └── src/
         ├── context/
-        │   └── WalletContext.jsx  # Ethereum bağlantısı, kayıt state'i, hasAccess
+        │   └── WalletContext.jsx  # Ethereum bağlantısı, Multicall3 batch okuma
         ├── utils/
-        │   ├── crypto.js          # AES-256-GCM şifreleme / çözme
-        │   └── ipfs.js            # IPFS gateway sabiti (ipfsUrl helper)
+        │   ├── crypto.js          # AES-256-GCM şifreleme / çözme + dataHash enc/dec
+        │   └── ipfs.js            # IPFS yükleme + çok gateway yarışı (fetchFromIPFS)
         ├── pages/
         │   ├── Home.jsx
         │   ├── Marketplace.jsx    # Kayıt listesi, kategori filtresi, satın alma
         │   ├── Upload.jsx         # Şifreleme + çift IPFS yüklemesi (maks. 3.3 MB)
-        │   ├── MyData.jsx         # Hasta paneli: erişim yönetimi, fiyat, devir
-        │   ├── Purchases.jsx      # Araştırmacı paneli: indirme
+        │   ├── MyData.jsx         # Hasta paneli: erişim yönetimi, anahtar rotasyonu
+        │   ├── Purchases.jsx      # Araştırmacı paneli: enc: çözme + indirme
         │   └── NotFound.jsx
         └── components/
-            ├── Header.jsx         # Navigasyon, karanlık mod, cüzdan butonu
+            ├── Header.jsx         # Navigasyon, üç durumlu tema (açık/karanlık/sistem)
             ├── Toast.jsx          # Bildirim sistemi
             └── Icons.jsx
 ```
