@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
-import { encryptFile } from "../utils/crypto";
+import { encryptFile, encryptDataHash } from "../utils/crypto";
 import { uploadToIPFS, ipfsUrl } from "../utils/ipfs";
 import { WalletIcon, ClockIcon, FileIcon } from "../components/Icons";
 
@@ -194,7 +194,24 @@ export default function MyData() {
         uploadToIPFS(enc.encode(JSON.stringify(fullData)), "data.json", "application/json"),
       ]);
 
-      const tx = await contract.rotateKey(recordId, newPreviewHash, newDataHash);
+      // Encrypt the new dataHash before storing on-chain
+      let encNewDataHash = newDataHash;
+      try {
+        const keyMsg = `MediChain anahtar talebi: ${account.toLowerCase()}:${newPreviewHash}`;
+        const keySig = await contract.runner.signMessage(keyMsg);
+        const keyRes = await fetch("/api/prepare-key", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ patientAddress: account, previewHash: newPreviewHash, signature: keySig }),
+        });
+        if (!keyRes.ok) throw new Error("HTTP " + keyRes.status);
+        const { K } = await keyRes.json();
+        if (K) encNewDataHash = await encryptDataHash(newDataHash, K);
+      } catch (e) {
+        if (!import.meta.env.DEV) throw new Error("Şifreleme anahtarı alınamadı: " + e.message);
+      }
+
+      const tx = await contract.rotateKey(recordId, newPreviewHash, encNewDataHash);
       await tx.wait();
       removeToast(tid);
       addToast(

@@ -1,3 +1,40 @@
+// Encrypt an IPFS CID string with AES-256-GCM using a 32-byte hex key.
+// Returns "enc:<hex(iv + ciphertext)>" — never reveals the raw CID in calldata.
+export async function encryptDataHash(cid, Khex) {
+  const keyBytes = hexToBuf(Khex);
+  const key = await window.crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, false, ["encrypt"]);
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = await window.crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    new TextEncoder().encode(cid)
+  );
+  const combined = new Uint8Array(12 + ciphertext.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(ciphertext), 12);
+  return "enc:" + bufToHex(combined);
+}
+
+// Decrypt an "enc:..." string back to the original IPFS CID.
+// Plain CIDs (no prefix) are returned as-is for backward compatibility.
+export async function decryptDataHash(encStr, Khex) {
+  if (!encStr.startsWith("enc:")) return encStr;
+  const combined = hexToBuf(encStr.slice(4));
+  const iv = combined.slice(0, 12);
+  const ciphertext = combined.slice(12);
+  const key = await window.crypto.subtle.importKey("raw", hexToBuf(Khex), { name: "AES-GCM" }, false, ["decrypt"]);
+  const decrypted = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+  return new TextDecoder().decode(decrypted);
+}
+
+function bufToHex(buf) {
+  return Array.from(buf).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function hexToBuf(hex) {
+  return new Uint8Array(hex.match(/.{2}/g).map((b) => parseInt(b, 16)));
+}
+
 export async function encryptFile(file) {
   const key = await window.crypto.subtle.generateKey(
     { name: "AES-GCM", length: 256 },

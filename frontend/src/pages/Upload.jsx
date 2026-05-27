@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
-import { encryptFile } from "../utils/crypto";
+import { encryptFile, encryptDataHash } from "../utils/crypto";
 import { uploadToIPFS } from "../utils/ipfs";
 import { WalletIcon } from "../components/Icons";
 
@@ -86,12 +86,38 @@ export default function Upload() {
       ]);
       setProgress(70);
 
+      // 4. Encrypt dataHash before putting it in calldata
+      removeToast(activeToastId);
+      activeToastId = addToast("Şifreleme anahtarı alınıyor (MetaMask imzası gerekiyor)...", "loading", 0);
+
+      let encDataHash = dataHash; // fallback for local dev without vercel dev
+      try {
+        const keyMsg = `MediChain anahtar talebi: ${account.toLowerCase()}:${previewHash}`;
+        const keySig = await contract.runner.signMessage(keyMsg);
+        const keyRes = await fetch("/api/prepare-key", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ patientAddress: account, previewHash, signature: keySig }),
+        });
+        if (!keyRes.ok) throw new Error("HTTP " + keyRes.status);
+        const { K } = await keyRes.json();
+        if (!K) throw new Error("K döndürülmedi");
+        encDataHash = await encryptDataHash(dataHash, K);
+      } catch (e) {
+        if (import.meta.env.DEV) {
+          addToast("Yerel geliştirme: calldata şifrelemesi atlandı. Tam test için vercel dev kullanın.", "info", 8000);
+        } else {
+          throw new Error("Şifreleme anahtarı alınamadı: " + e.message);
+        }
+      }
+
+      setProgress(80);
       setActiveStep(2);
       removeToast(activeToastId);
       activeToastId = addToast("İşlem blockchain'e gönderiliyor...", "loading", 0);
 
-      // 4. İki hash'i ve fiyatı akıllı sözleşmeye kaydet
-      const tx = await contract.listData(previewHash, dataHash, ethers.parseEther(price));
+      // 5. İki hash'i ve fiyatı akıllı sözleşmeye kaydet (dataHash şifreli)
+      const tx = await contract.listData(previewHash, encDataHash, ethers.parseEther(price));
       setProgress(85);
       await tx.wait();
       setProgress(100);

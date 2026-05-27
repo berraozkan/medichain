@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
-import { decryptAndDownload } from "../utils/crypto";
+import { decryptAndDownload, decryptDataHash } from "../utils/crypto";
 import { ipfsUrl } from "../utils/ipfs";
 import { WalletIcon, InboxIcon, ClockIcon } from "../components/Icons";
 
@@ -36,11 +36,11 @@ export default function Purchases() {
     (r) => r.userHasAccess && account && r.owner.toLowerCase() !== account.toLowerCase()
   );
 
-  async function fetchMetadata(record) {
+  // Fetch public preview.json — no auth needed, used for category/description display
+  async function fetchPreviewMeta(record) {
     if (metadata[record.id]) return metadata[record.id];
     try {
-      const metaHash = await contract.getDataHash(record.id);
-      const res  = await fetch(ipfsUrl(metaHash));
+      const res  = await fetch(ipfsUrl(record.previewHash));
       const text = await res.text();
       try {
         const meta = JSON.parse(text);
@@ -50,20 +50,44 @@ export default function Purchases() {
           return result;
         }
       } catch (_) {}
-      const legacy = { _legacy: true, hash: metaHash };
-      setMetadata((prev) => ({ ...prev, [record.id]: legacy }));
-      return legacy;
-    } catch (e) {
-      addToast("Metadata alınamadı: " + e.message, "error");
-      return null;
+    } catch (_) {}
+    return null;
+  }
+
+  // Fetch private data.json — requires MetaMask signature + server key decryption
+  async function fetchPrivateMeta(record) {
+    const encDataHash = await contract.getDataHash(record.id);
+
+    let dataHash = encDataHash;
+    if (encDataHash.startsWith("enc:")) {
+      const message = `MediChain erişim talebi: ${record.id}`;
+      const signature = await contract.runner.signMessage(message);
+      const keyRes = await fetch("/api/get-key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recordId: record.id, requesterAddress: account, signature }),
+      });
+      if (!keyRes.ok) {
+        const err = await keyRes.json().catch(() => ({}));
+        throw new Error(err.error || "Şifre çözme anahtarı alınamadı");
+      }
+      const { K } = await keyRes.json();
+      dataHash = await decryptDataHash(encDataHash, K);
     }
+
+    const res  = await fetch(ipfsUrl(dataHash));
+    const text = await res.text();
+    try {
+      const meta = JSON.parse(text);
+      if (meta.version === 2) return meta;
+    } catch (_) {}
+    return { _legacy: true, hash: dataHash };
   }
 
   async function handleDownload(record) {
     setDownloading(record.id);
     try {
-      const meta = await fetchMetadata(record);
-      if (!meta) return;
+      const meta = await fetchPrivateMeta(record);
       if (meta._legacy) {
         window.open(ipfsUrl(meta.hash), "_blank");
         return;
@@ -78,8 +102,8 @@ export default function Purchases() {
   }
 
   async function toggleDetails(record) {
-    const meta = await fetchMetadata(record);
-    if (!meta || meta._legacy) return;
+    const meta = await fetchPreviewMeta(record);
+    if (!meta) return;
     setMetadata((prev) => ({
       ...prev,
       [record.id]: { ...prev[record.id], _expanded: !prev[record.id]?._expanded },
