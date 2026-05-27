@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
 import { encryptFile, encryptDataHash } from "../utils/crypto";
-import { uploadToIPFS, ipfsUrl } from "../utils/ipfs";
+import { uploadToIPFS, ipfsUrl, fetchFromIPFS } from "../utils/ipfs";
 import { WalletIcon, ClockIcon, FileIcon } from "../components/Icons";
 
 const MAX_FILE_BYTES = 3.3 * 1024 * 1024;
@@ -165,7 +165,7 @@ export default function MyData() {
       let previewData = { version: 2, category: "Diğer", description: "" };
       if (record?.previewHash) {
         try {
-          const res = await fetch(ipfsUrl(record.previewHash));
+          const res = await fetchFromIPFS(record.previewHash);
           if (res.ok) previewData = await res.json();
         } catch {}
       }

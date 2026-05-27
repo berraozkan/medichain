@@ -1,6 +1,29 @@
 export const IPFS_GATEWAY = "https://gateway.pinata.cloud/ipfs";
 
+const GATEWAYS = [
+  "https://gateway.pinata.cloud/ipfs",
+  "https://ipfs.io/ipfs",
+  "https://dweb.link/ipfs",
+];
+
 export const ipfsUrl = (hash) => `${IPFS_GATEWAY}/${hash}`;
+
+// Race multiple gateways, return first successful response
+export async function fetchFromIPFS(hash) {
+  const controllers = GATEWAYS.map(() => new AbortController());
+  try {
+    return await Promise.any(
+      GATEWAYS.map((gw, i) =>
+        fetch(`${gw}/${hash}`, { signal: controllers[i].signal }).then((r) => {
+          if (!r.ok) throw new Error(`${r.status}`);
+          return r;
+        })
+      )
+    );
+  } finally {
+    controllers.forEach((c) => c.abort());
+  }
+}
 
 function bytesToBase64(bytes) {
   const CHUNK = 8192;

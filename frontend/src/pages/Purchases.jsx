@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
 import { decryptAndDownload, decryptDataHash } from "../utils/crypto";
-import { ipfsUrl } from "../utils/ipfs";
+import { ipfsUrl, fetchFromIPFS } from "../utils/ipfs";
 import { WalletIcon, InboxIcon, ClockIcon } from "../components/Icons";
 
 const shortHash = (h) => (h ? `${h.slice(0, 16)}...` : "");
@@ -40,7 +40,7 @@ export default function Purchases() {
   async function fetchPreviewMeta(record) {
     if (metadata[record.id]) return metadata[record.id];
     try {
-      const res  = await fetch(ipfsUrl(record.previewHash));
+      const res  = await fetchFromIPFS(record.previewHash);
       const text = await res.text();
       try {
         const meta = JSON.parse(text);
@@ -75,7 +75,7 @@ export default function Purchases() {
       dataHash = await decryptDataHash(encDataHash, K);
     }
 
-    const res  = await fetch(ipfsUrl(dataHash));
+    const res  = await fetchFromIPFS(dataHash);
     const text = await res.text();
     try {
       const meta = JSON.parse(text);
