@@ -3,47 +3,12 @@ import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
 import { encryptFile } from "../utils/crypto";
+import { uploadToIPFS } from "../utils/ipfs";
 import { WalletIcon } from "../components/Icons";
 
 const STEPS          = ["Dosya Seçimi", "Fiyat Belirleme", "Blockchain Kaydı"];
 const CATEGORIES     = ["Kan Tahlili", "MRI / Görüntüleme", "EKG", "Röntgen", "Patoloji", "Ameliyat Raporu", "Diğer"];
 const MAX_FILE_BYTES = 3.3 * 1024 * 1024;
-
-function bytesToBase64(bytes) {
-  const CHUNK = 8192;
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  }
-  return btoa(binary);
-}
-
-async function uploadBytesToIPFS(bytes, filename, contentType) {
-  // Local dev: VITE_PINATA_JWT varsa doğrudan çağır (JWT bundle'a gömülmez çünkü prod'da bu değişken set edilmez)
-  const devJwt = import.meta.env.VITE_PINATA_JWT;
-  if (import.meta.env.DEV && devJwt) {
-    const formData = new FormData();
-    formData.append("file", new Blob([bytes], { type: contentType }), filename);
-    const res  = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
-      method:  "POST",
-      headers: { Authorization: `Bearer ${devJwt}` },
-      body:    formData,
-    });
-    const data = await res.json();
-    if (!data.IpfsHash) throw new Error("IPFS yüklemesi başarısız oldu.");
-    return data.IpfsHash;
-  }
-
-  // Production: JWT sunucu tarafında, istemciye hiç gönderilmez
-  const res = await fetch("/api/upload-ipfs", {
-    method:  "POST",
-    headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify({ data: bytesToBase64(new Uint8Array(bytes)), filename, contentType }),
-  });
-  const result = await res.json();
-  if (!result.IpfsHash) throw new Error(result.error || "IPFS yüklemesi başarısız oldu.");
-  return result.IpfsHash;
-}
 
 export default function Upload() {
   const { account, contract, connectWallet, addToast, removeToast, loadRecords } = useWallet();
@@ -88,7 +53,7 @@ export default function Upload() {
       activeToastId = addToast("Şifreli dosya IPFS'e yükleniyor...", "loading", 0);
 
       // 2. Şifreli dosyayı IPFS'e yükle
-      const encryptedFileHash = await uploadBytesToIPFS(
+      const encryptedFileHash = await uploadToIPFS(
         encryptedBytes,
         `enc_${file.name}`,
         "application/octet-stream"
@@ -116,8 +81,8 @@ export default function Upload() {
       };
       const enc = new TextEncoder();
       const [previewHash, dataHash] = await Promise.all([
-        uploadBytesToIPFS(enc.encode(JSON.stringify(previewData)), "preview.json", "application/json"),
-        uploadBytesToIPFS(enc.encode(JSON.stringify(fullData)),    "data.json",    "application/json"),
+        uploadToIPFS(enc.encode(JSON.stringify(previewData)), "preview.json", "application/json"),
+        uploadToIPFS(enc.encode(JSON.stringify(fullData)),    "data.json",    "application/json"),
       ]);
       setProgress(70);
 

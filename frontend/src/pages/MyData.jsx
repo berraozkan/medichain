@@ -1,8 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
+import { encryptFile } from "../utils/crypto";
+import { uploadToIPFS, ipfsUrl } from "../utils/ipfs";
 import { WalletIcon, ClockIcon, FileIcon } from "../components/Icons";
+
+const MAX_FILE_BYTES = 3.3 * 1024 * 1024;
 
 const shortAddr = (addr) => (addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : "");
 const shortHash = (h)    => (h    ? `${h.slice(0, 18)}...`                    : "");
@@ -20,6 +24,8 @@ export default function MyData() {
   const [revokeInputs, setRevokeInputs]     = useState({});
   const [priceInputs, setPriceInputs]       = useState({});
   const [transferInputs, setTransferInputs] = useState({});
+  const [rotatingKeyId, setRotatingKeyId]   = useState(null);
+  const rotateFileInputRef                  = useRef(null);
 
   const myRecords    = records.filter((r) => account && r.owner.toLowerCase() === account.toLowerCase());
   const totalActive  = myRecords.filter((r) => r.isActive).length;
@@ -135,19 +141,68 @@ export default function MyData() {
     }
   }
 
-  async function rotateKey(recordId) {
-    if (!contract) return;
-    const tid = addToast("Dosya yeniden şifreleniyor, lütfen bekleyin...", "loading", 0);
+  function triggerRotateKey(recordId) {
+    setRotatingKeyId(recordId);
+    rotateFileInputRef.current?.click();
+  }
+
+  async function handleRotateFileSelect(e) {
+    const file = e.target.files[0];
+    e.target.value = "";
+    const recordId = rotatingKeyId;
+    setRotatingKeyId(null);
+    if (!file || !recordId || !contract) return;
+
+    if (file.size > MAX_FILE_BYTES) {
+      addToast(`Dosya çok büyük (${(file.size / 1024 / 1024).toFixed(1)} MB). Maksimum 3.3 MB.`, "error");
+      return;
+    }
+
+    const tid = addToast("Yeni anahtar üretiliyor ve dosya şifreleniyor...", "loading", 0);
     try {
-      // Re-upload the same record with a new encryption key via Upload flow is ideal;
-      // here we rotate using placeholder hashes so the patient can re-upload afterward.
-      // Full flow: patient re-uploads file → gets new hashes → calls rotateKey.
+      // Fetch existing preview.json to preserve category/description
+      const record = records.find((r) => r.id === recordId);
+      let previewData = { version: 2, category: "Diğer", description: "" };
+      if (record?.previewHash) {
+        try {
+          const res = await fetch(ipfsUrl(record.previewHash));
+          if (res.ok) previewData = await res.json();
+        } catch {}
+      }
+
+      // Re-encrypt with a brand-new AES-256-GCM key
+      const { encryptedBytes, key, iv } = await encryptFile(file);
+
+      // Upload new encrypted file
+      const encryptedFileHash = await uploadToIPFS(
+        encryptedBytes, `enc_${file.name}`, "application/octet-stream"
+      );
+
+      // Upload new preview.json and data.json in parallel
+      const enc = new TextEncoder();
+      const fullData = {
+        version: 2,
+        fileName: file.name,
+        category: previewData.category,
+        description: previewData.description,
+        encryptedFileHash,
+        key,
+        iv,
+      };
+      const [newPreviewHash, newDataHash] = await Promise.all([
+        uploadToIPFS(enc.encode(JSON.stringify(previewData)), "preview.json", "application/json"),
+        uploadToIPFS(enc.encode(JSON.stringify(fullData)), "data.json", "application/json"),
+      ]);
+
+      const tx = await contract.rotateKey(recordId, newPreviewHash, newDataHash);
+      await tx.wait();
       removeToast(tid);
       addToast(
-        "Anahtar rotasyonu için kaydı yeniden yükleyin: Upload sayfasından aynı dosyayı tekrar ekleyin, ardından eski kaydı silin.",
-        "info",
-        10000
+        `Kayıt #${recordId} yeni şifreleme anahtarıyla güncellendi. Erişimi iptal edilen araştırmacıların eski anahtarı artık geçersiz.`,
+        "success",
+        8000
       );
+      loadRecords();
     } catch (e) {
       removeToast(tid);
       addToast("Hata: " + e.message, "error");
@@ -178,6 +233,16 @@ export default function MyData() {
     });
   }
 
+  // Hidden file input — shared across all records for key rotation
+  const rotateFileInput = (
+    <input
+      ref={rotateFileInputRef}
+      type="file"
+      style={{ display: "none" }}
+      onChange={handleRotateFileSelect}
+    />
+  );
+
   if (!account) {
     return (
       <main className="main">
@@ -195,6 +260,7 @@ export default function MyData() {
 
   return (
     <main className="main">
+      {rotateFileInput}
       <div className="page-hero">
         <div>
           <p className="section-label">Erişim Yönetimi</p>
@@ -406,6 +472,26 @@ export default function MyData() {
                           Güncelle
                         </button>
                       </div>
+                    </div>
+
+                    {/* ── Anahtar Rotasyonu ── */}
+                    <div className="revoke-manual">
+                      <div className="access-panel-title" style={{ marginBottom: 4 }}>
+                        Şifreleme Anahtarını Döndür
+                      </div>
+                      <p style={{ fontSize: ".72rem", color: "var(--gray-500)", marginBottom: 10, lineHeight: 1.5 }}>
+                        Dosyayı yeni bir AES-256-GCM anahtarıyla yeniden şifreleyip yükler ve
+                        sözleşmedeki hash'leri günceller. Erişimi iptal edilen araştırmacıların
+                        elindeki eski anahtar geçersiz kalır.
+                      </p>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        onClick={() => triggerRotateKey(r.id)}
+                        disabled={rotatingKeyId === r.id}
+                        style={{ width: "100%", justifyContent: "center" }}
+                      >
+                        {rotatingKeyId === r.id ? <><span className="spinner-dark" /> İşleniyor...</> : "Dosya Seç ve Anahtarı Döndür"}
+                      </button>
                     </div>
 
                     {/* ── Sahiplik Devri ── */}

@@ -126,7 +126,7 @@ npx hardhat test test/MediChain.ts
 | Grup | Test Sayısı |
 |------|-------------|
 | `listData` | 7 |
-| `purchaseData` | 9 |
+| `purchaseData` | 10 |
 | `getDataHash` | 5 |
 | `revokeAccess` | 4 |
 | `delistData / relistData` | 6 |
@@ -205,13 +205,23 @@ MEDICHAIN-main/
 
 ## Kısıtlamalar ve Tasarım Kararları
 
-### Anahtar Geri Alma
-`revokeAccess` on-chain erişimi kaldırır; ancak araştırmacının daha önce aldığı şifre çözme anahtarı (`key`, `iv`) geçersiz kılınamaz. Tam çözüm için iki yaklaşım mevcuttur:
+### Anahtar Geri Alma ve Forward Secrecy
 
-- **Anahtar rotasyonu (uygulandı):** `rotateKey(id, newPreviewHash, newDataHash)` — Hasta dosyayı yeni bir anahtarla yeniden şifreleyip yükler; eski araştırmacı yeni şifreli dosyayı çözemez.
-- **Proxy Re-Encryption (önerilen gelecek çalışma):** Lit Protocol gibi bir ağ, anahtarı kullanıcıya hiç göndermeden on-chain koşul üzerinden erişimi anlık olarak denetler.
+`revokeAccess` on-chain erişimi kaldırır; ancak araştırmacının daha önce tarayıcısına indirdiği `key` ve `iv` değerleri geçersiz kılınamaz — bu durum **forward secrecy eksikliği** olarak adlandırılır.
+
+- **Anahtar rotasyonu (uygulandı):** `rotateKey(id, newPreviewHash, newDataHash)` — MyData sayfasından "Dosya Seç ve Anahtarı Döndür" ile tetiklenir. Dosya yeni bir AES-256-GCM anahtarıyla tarayıcıda yeniden şifrelenir, IPFS'e yüklenir ve sözleşmedeki hash'ler güncellenir. Bu noktadan sonra erişimi iptal edilen araştırmacının elindeki anahtar artık yeni şifreli dosyayı çözemez. *Sınır:* Araştırmacı rotasyondan önce dosyayı indirmişse eski kopyaya erişimi devam eder.
+- **Proxy Re-Encryption (önerilen gelecek çalışma):** Lit Protocol gibi bir ağ, şifreli veriye erişimi on-chain koşula (`hasAccess`) bağlar; anahtarı hiçbir zaman düz metin olarak kullanıcıya göndermez.
+
+### Ethereum Calldata Şeffaflığı
+
+`listData(_previewHash, _dataHash, _price)` çağrısındaki `_dataHash` parametresi Ethereum transaction calldata'sında **plaintext** olarak yayınlanır. `dataHashes` private mapping yalnızca ABI üzerinden doğrudan okumayı engeller; ancak blockchain'i tarayan herhangi bir gözlemci (Etherscan, tam node) bu transaction'ın calldata'sını okuyarak `data.json` CID'ini elde edebilir. IPFS erişim kontrolsüz olduğundan, CID'i bilen herkes `data.json`'ı çekebilir ve içindeki AES anahtarına ulaşabilir.
+
+**Mevcut koruma:** Güvenlik, `data.json` CID'inin gizliliğine dayanır (obscurity). Bu, gerçek bir kriptografik erişim kontrolü değildir.
+
+**Gerçek çözüm:** Lit Protocol gibi bir proxy re-encryption ağı, şifreleme anahtarını on-chain koşula bağlayarak calldata'da CID görünür olsa bile anahtarı yetkisiz kişilerin eline geçmesini engeller. Bu mimari değişiklik mevcut projenin kapsamı dışındadır.
 
 ### GDPR Uyumu (Silinme Hakkı — Art. 17)
+
 IPFS içerik-adreslidir; fiziksel silme mümkün değildir. `deleteRecord(id)` fonksiyonu **kriptografik silme** uygular:
 
 1. Hash'ler sözleşmeden temizlenir → `getDataHash` artık revert eder
@@ -221,6 +231,9 @@ IPFS içerik-adreslidir; fiziksel silme mümkün değildir. `deleteRecord(id)` f
 Bu yaklaşım GDPR Art. 17 kapsamında kabul gören *cryptographic erasure* tekniğidir. Blockchain tabanlı sistemlerde fiziksel silmeyle eşdeğer olduğu tartışılmakla birlikte akademik literatürde savunulabilir konumdadır.
 
 ### Diğer Sınırlılıklar
-- **Maksimum dosya boyutu: 3.3 MB** — Vercel serverless body limiti (4.5 MB) ve base64 şişirmesi nedeniyle
+
+- **Maksimum dosya boyutu: 3.3 MB** — Vercel serverless body limiti (4.5 MB) ve base64 şişirmesi nedeniyle; gerçek tıbbi görüntüleme (MRI, CT) dosyaları için uygun değildir
+- **Ölçeklenebilirlik** — `loadRecords()` tüm kayıtları tek seferde çeker; kayıt sayısı büyüdükçe bu çağrı uzar. Üretim kalitesi için sayfalama ve on-chain indeks yapısı gereklidir
+- **Gas maliyeti** — Her yükleme işlemi 3 IPFS çağrısı + 1 sözleşme çağrısı içerir; mainnet ortamında bu maliyet önemli olabilir
 - **Sepolia testnet** — Gerçek ETH kullanmayın
 - **IPFS kalıcılığı** — Pinata ücretsiz planda pin'ler silinebilir
