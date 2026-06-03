@@ -540,6 +540,9 @@ export default function MyData() {
                       <p style={{ fontSize: ".72rem", color: "var(--gray-500)", marginBottom: 10, lineHeight: 1.5 }}>
                         Bu işlem geri alınamaz. Kayıt kalıcı olarak yeni cüzdan adresine devredilir.
                       </p>
+                      <div className="info-box info-box-warning" style={{ marginBottom: 10, fontSize: ".72rem" }}>
+                        <strong>Önemli:</strong> Devir sonrasında yeni sahibin "Şifreleme Anahtarını Döndür" işlemini yapması gerekir; aksi hâlde mevcut alıcılar dahil kimse dosyayı indiremez.
+                      </div>
                       <div className="input-row" style={{ display: "flex", gap: 8 }}>
                         <input
                           className="form-input"
