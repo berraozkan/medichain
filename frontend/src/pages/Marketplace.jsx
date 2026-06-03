@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 import { useWallet } from "../context/WalletContext";
-import { decryptAndDownload } from "../utils/crypto";
+import { decryptAndDownload, decryptDataHash } from "../utils/crypto";
 import { fetchFromIPFS, ipfsUrl } from "../utils/ipfs";
 import { WalletIcon, InboxIcon, ClockIcon } from "../components/Icons";
 
@@ -89,8 +89,8 @@ export default function Marketplace() {
       return true;
     })
     .sort((a, b) => {
-      if (sort === "price_asc") return Number(a.price - b.price);
-      if (sort === "price_desc") return Number(b.price - a.price);
+      if (sort === "price_asc")  return a.price < b.price ? -1 : a.price > b.price ? 1 : 0;
+      if (sort === "price_desc") return b.price < a.price ? -1 : b.price > a.price ? 1 : 0;
       return a.id - b.id;
     });
 
@@ -154,9 +154,26 @@ export default function Marketplace() {
     }
     setViewing(id);
     try {
-      // getDataHash now allows both owners and buyers — no special case needed
-      const metadataHash = await contract.getDataHash(id);
-      const res = await fetchFromIPFS(metadataHash);
+      const encDataHash = await contract.getDataHash(id);
+
+      let dataHash = encDataHash;
+      if (encDataHash.startsWith("enc:")) {
+        const message = `MediChain erişim talebi: ${id}`;
+        const signature = await contract.runner.signMessage(message);
+        const keyRes = await fetch("/api/get-key", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ recordId: id, requesterAddress: account, signature }),
+        });
+        if (!keyRes.ok) {
+          const err = await keyRes.json().catch(() => ({}));
+          throw new Error(err.error || "Şifre çözme anahtarı alınamadı");
+        }
+        const { K } = await keyRes.json();
+        dataHash = await decryptDataHash(encDataHash, K);
+      }
+
+      const res = await fetchFromIPFS(dataHash);
       const text = await res.text();
       try {
         const meta = JSON.parse(text);
@@ -166,10 +183,7 @@ export default function Marketplace() {
           return;
         }
       } catch (_) {}
-      window.open(
-        ipfsUrl(metadataHash),
-        "_blank",
-      );
+      window.open(ipfsUrl(dataHash), "_blank");
     } catch (e) {
       addToast("İndirme hatası: " + (e?.message || "Bilinmeyen hata"), "error");
     } finally {
