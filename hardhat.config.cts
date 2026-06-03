@@ -1,11 +1,14 @@
-import "@nomicfoundation/hardhat-toolbox";
-import "@nomicfoundation/hardhat-ignition-ethers";
-import dotenv from "dotenv";
-try { dotenv.config(); } catch {}
+require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-ignition-ethers");
+try { require("dotenv").config(); } catch {}
 
 /** @type import('hardhat/config').HardhatUserConfig */
-export default {
+module.exports = {
   solidity: "0.8.28",
+  mocha: {
+    require: ["ts-node/register"],
+    spec: "test/**/*.ts",
+  },
   networks: {
     localhost: {
       url: "http://127.0.0.1:8545",

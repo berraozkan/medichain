@@ -184,7 +184,10 @@ export default function MyData() {
       if (record?.previewHash) {
         try {
           const res = await fetchFromIPFS(record.previewHash);
-          if (res.ok) previewData = await res.json();
+          if (res.ok) {
+            const fetched = await res.json();
+            if (fetched.version === 2) previewData = fetched;
+          }
         } catch {}
       }
 

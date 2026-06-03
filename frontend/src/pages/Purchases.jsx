@@ -205,8 +205,10 @@ export default function Purchases() {
                       fontSize: ".82rem", color: "var(--gray-700)", lineHeight: 1.7,
                       display: "flex", flexDirection: "column", gap: 4,
                     }}>
-                      {meta.fileName && <div><strong>Dosya adı:</strong> {meta.fileName}</div>}
-                      {meta.description && <div><strong>Açıklama:</strong> {meta.description}</div>}
+                      {meta.description
+                        ? <div><strong>Açıklama:</strong> {meta.description}</div>
+                        : <div style={{ color: "var(--gray-400)" }}>Açıklama girilmemiş.</div>
+                      }
                     </div>
                   )}
 
