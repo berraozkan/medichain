@@ -181,7 +181,7 @@ MEDICHAIN-main/
 ├── ignition/modules/
 │   └── MediChain.js               # Hardhat Ignition deploy modülü
 ├── deploy.js                      # Alternatif deploy scripti
-├── hardhat.config.js
+├── hardhat.config.cts
 ├── .env.example                   # Sözleşme deploy ortam değişkenleri
 ├── api/
 │   ├── upload-ipfs.js             # Vercel serverless: Pinata JWT proxy
