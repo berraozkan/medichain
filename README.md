@@ -47,6 +47,189 @@ Akıllı sözleşmede `previewHash` public mapping'de, `dataHash` private mappin
 
 ---
 
+## UML Diyagramları
+
+### Sistem Mimarisi (Bileşen Diyagramı)
+
+```mermaid
+graph TB
+    subgraph Tarayıcı["🌐 Tarayıcı (React SPA)"]
+        direction TB
+        WC["WalletContext\n(ethers.js + MetaMask)"]
+        UP["Upload\nSayfası"]
+        MP["Marketplace\nSayfası"]
+        MD["MyData\nSayfası"]
+        PU["Purchases\nSayfası"]
+        CR["crypto.js\n(Web Crypto API)"]
+        IP["ipfs.js\n(Pinata + Gateways)"]
+        UP --> WC
+        MP --> WC
+        MD --> WC
+        PU --> WC
+        UP --> CR
+        UP --> IP
+        MP --> IP
+        MP --> CR
+        MD --> CR
+        MD --> IP
+    end
+
+    subgraph Vercel["☁️ Vercel (Serverless API)"]
+        direction TB
+        AK["/api/prepare-key\n(anahtar türetme)"]
+        GK["/api/get-key\n(erişim doğrulama)"]
+        UI2["/api/upload-ipfs\n(IPFS proxy)"]
+    end
+
+    subgraph Blockchain["⛓️ Ethereum Sepolia"]
+        SC["MediChain.sol\n(Akıllı Sözleşme)"]
+        MC3["Multicall3\n(toplu okuma)"]
+    end
+
+    subgraph IPFS["📦 IPFS / Pinata"]
+        PIN["Pinata Pin API\n(yükleme)"]
+        GW1["gateway.pinata.cloud"]
+        GW2["ipfs.io"]
+        GW3["dweb.link"]
+    end
+
+    MM["🦊 MetaMask\n(imza + tx)"]
+
+    WC <-->|"eth_requestAccounts\neth_chainId\nwallet_switch"| MM
+    MM <-->|"listData / purchaseData\nrevokeAccess / rotateKey\ndeleteRecord"| SC
+    WC <-->|"dataCount / medicalRecords\nhasAccess"| MC3
+    MC3 <--> SC
+
+    UP -->|"POST {data,filename}"| UI2
+    MD -->|"POST {data,filename}"| UI2
+    UI2 -->|"pinFileToIPFS"| PIN
+
+    UP -->|"POST {addr,previewHash,sig}"| AK
+    MD -->|"POST {addr,previewHash,sig}"| AK
+
+    MP -->|"POST {recordId,addr,sig}"| GK
+    PU -->|"POST {recordId,addr,sig}"| GK
+    GK <-->|"hasAccess / medicalRecords"| SC
+
+    IP -->|"fetchFromIPFS"| GW1
+    IP -->|"fetchFromIPFS"| GW2
+    IP -->|"fetchFromIPFS"| GW3
+```
+
+### Kayıt Yükleme Akışı
+
+```mermaid
+sequenceDiagram
+    actor Hasta as Hasta (Tarayıcı)
+    participant UI as Upload Sayfası
+    participant Crypto as crypto.js
+    participant IPFS as ipfs.js
+    participant API_IPFS as /api/upload-ipfs
+    participant API_KEY as /api/prepare-key
+    participant MM as MetaMask
+    participant SC as MediChain Sözleşmesi
+    participant Pinata as Pinata / IPFS
+
+    Hasta->>UI: Dosya seç, kategori & fiyat gir
+    Hasta->>UI: "Şifrele ve Listele" tıkla
+
+    UI->>Crypto: encryptFile(file)
+    Crypto-->>UI: { encryptedBytes, key, iv }
+
+    UI->>IPFS: uploadToIPFS(encryptedBytes)
+    IPFS->>API_IPFS: POST /api/upload-ipfs
+    API_IPFS->>Pinata: pinFileToIPFS
+    Pinata-->>UI: encryptedFileHash
+
+    par Preview & Data JSON yükleme (paralel)
+        UI->>Pinata: previewData.json (kategori, açıklama)
+        Pinata-->>UI: previewHash
+    and
+        UI->>Pinata: fullData.json (dosya adı, encryptedFileHash, key, iv)
+        Pinata-->>UI: dataHash
+    end
+
+    UI->>MM: signMessage("MediChain anahtar talebi: addr:previewHash")
+    MM-->>UI: signature
+
+    UI->>API_KEY: POST /api/prepare-key {patientAddress, previewHash, signature}
+    API_KEY->>API_KEY: verifySignature + HMAC-SHA256(secret, "addr:previewHash")
+    API_KEY-->>UI: { K }
+
+    UI->>Crypto: encryptDataHash(dataHash, K) → "enc:..."
+    UI->>MM: contract.listData(previewHash, encDataHash, fiyat)
+    MM->>SC: listData() tx
+    SC-->>UI: DataListed event
+    UI-->>Hasta: "Kayıt başarıyla eklendi"
+```
+
+### Satın Alma & İndirme Akışı
+
+```mermaid
+sequenceDiagram
+    actor Araştırmacı as Araştırmacı (Tarayıcı)
+    participant UI as Marketplace Sayfası
+    participant MM as MetaMask
+    participant SC as MediChain Sözleşmesi
+    participant API_KEY as /api/get-key
+    participant Crypto as crypto.js
+    participant IPFS_GW as IPFS Gateway
+
+    Note over Araştırmacı,UI: ── Satın Alma ──
+    Araştırmacı->>UI: "Satın Al" tıkla
+    UI->>MM: contract.purchaseData(id, {value: price})
+    MM->>SC: purchaseData() — ETH gönder
+    SC->>SC: hasAccess[buyer][id] = true
+    SC->>SC: owner.call{value: price}
+    SC-->>UI: DataPurchased event
+    UI-->>Araştırmacı: "Satın alındı"
+
+    Note over Araştırmacı,UI: ── Dosya İndirme ──
+    Araştırmacı->>UI: "İndir" tıkla
+    UI->>SC: contract.getDataHash(id)
+    SC-->>UI: encDataHash ("enc:...")
+
+    UI->>MM: signMessage("MediChain erişim talebi: id")
+    MM-->>UI: signature
+
+    UI->>API_KEY: POST /api/get-key {recordId, requesterAddress, signature}
+    API_KEY->>SC: hasAccess(requester, id) + medicalRecords(id)
+    SC-->>API_KEY: true, owner & previewHash
+    API_KEY->>API_KEY: K = HMAC-SHA256(secret, "owner:previewHash")
+    API_KEY-->>UI: { K }
+
+    UI->>Crypto: decryptDataHash(encDataHash, K) → dataHash
+    UI->>IPFS_GW: fetchFromIPFS(dataHash) — 3 gateway yarışı
+    IPFS_GW-->>UI: fullData.json {encryptedFileHash, key, iv}
+    UI->>Crypto: decryptAndDownload(metadata)
+    Crypto->>IPFS_GW: fetchFromIPFS(encryptedFileHash)
+    Crypto->>Crypto: AES-256-GCM decrypt
+    Crypto-->>Araştırmacı: dosya indirildi
+```
+
+### Tıbbi Kayıt Yaşam Döngüsü
+
+```mermaid
+stateDiagram-v2
+    [*] --> Aktif : listData()\nHasta kaydı yükler
+
+    Aktif --> Pasif        : delistData()
+    Pasif --> Aktif        : relistData()
+
+    Aktif --> Aktif        : purchaseData() — erişim açılır
+    Aktif --> Aktif        : revokeAccess() — erişim iptal
+    Aktif --> Aktif        : updatePrice()
+    Aktif --> Aktif        : rotateKey()
+    Aktif --> Aktif        : transferOwnership()
+
+    Aktif --> Silindi      : deleteRecord()\nKriptografik silme (GDPR Md. 17)
+    Pasif --> Silindi      : deleteRecord()\nKriptografik silme (GDPR Md. 17)
+
+    Silindi --> [*]
+```
+
+---
+
 ## Akıllı Sözleşme
 
 **Ağ:** Sepolia Testnet  
