@@ -27,7 +27,7 @@ export default function MyData() {
   const [rotatingKeyId, setRotatingKeyId]   = useState(null);
   const rotateFileInputRef                  = useRef(null);
 
-  const myRecords    = records.filter((r) => account && r.owner.toLowerCase() === account.toLowerCase());
+  const myRecords    = records.filter((r) => account && r.owner.toLowerCase() === account.toLowerCase() && r.previewHash !== "");
   const totalActive  = myRecords.filter((r) => r.isActive).length;
   const totalPassive = myRecords.length - totalActive;
 
